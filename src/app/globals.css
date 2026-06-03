@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 216 33% 97%;
+  --foreground: 222 32% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 32% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 32% 12%;
+  --primary: 211 100% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 22% 93%;
+  --secondary-foreground: 222 32% 16%;
+  --muted: 214 22% 91%;
+  --muted-foreground: 217 13% 42%;
+  --accent: 174 58% 42%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 22% 86%;
+  --input: 214 22% 84%;
+  --ring: 211 100% 48%;
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  background: hsl(var(--background));
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 22% 0%, rgba(0, 122, 255, 0.11), transparent 28rem),
+    linear-gradient(135deg, #f8fbff 0%, #edf4f8 44%, #f7f8fb 100%);
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  font-feature-settings: "ss01" on, "cv01" on;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.18);
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-card {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
