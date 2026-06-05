@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCustomerName } from "@/lib/utils";
+import { formatCustomerName, formatAddress } from "@/lib/utils";
 import type { CostCategory, Customer, JobDraft } from "@/types";
 
 type SummaryStepProps = {
@@ -63,7 +63,7 @@ export function SummaryStep({ draft, customer }: SummaryStepProps) {
           <Row label="Einsatzart" value={<Badge>{draft.type}</Badge>} />
           <Row label="Telefon" value={customer?.phone} />
           <Row label="E-Mail" value={customer?.email} />
-          <Row label="Adresse" value={customer?.address} />
+          <Row label="Adresse" value={formatAddress(customer)} />
           <Row label="Arbeitszeit" value={`${draft.startTime || "--:--"} bis ${draft.endTime || "--:--"}`} />
           <Row label="Monteure" value={draft.technicianCount ? `${draft.technicianCount}` : ""} />
           <Row label="Qualifikation" value={technicianRoleLabel(draft.technicianRoles)} />

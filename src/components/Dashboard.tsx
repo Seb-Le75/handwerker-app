@@ -16,6 +16,8 @@ export function Dashboard() {
   const [jobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const completedJobs = jobs.filter((job) => job.status === "Abgeschlossen").length;
   const openJobs = jobs.filter((job) => job.status !== "Abgeschlossen").length;
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter((c) => c.archived !== true).length;
 
   return (
     <div className="grid gap-5">
@@ -44,7 +46,7 @@ export function Dashboard() {
           <CardContent className="grid gap-3">
             <Metric icon={Wrench} label="Offene Einsaetze" value={openJobs} />
             <Metric icon={ClipboardCheck} label="Abgeschlossen" value={completedJobs} />
-            <Metric icon={UsersRound} label="Kunden" value={customers.length} />
+            <Metric icon={UsersRound} label="Kunden" value={`${activeCustomers} / ${totalCustomers}`} />
           </CardContent>
         </Card>
       </section>
@@ -110,7 +112,7 @@ export function Dashboard() {
   );
 }
 
-function Metric({ icon: Icon, label, value }: { icon: typeof Clock3; label: string; value: number }) {
+function Metric({ icon: Icon, label, value }: { icon: typeof Clock3; label: string; value: string | number }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-secondary/70 p-4">
       <div className="flex items-center gap-3">

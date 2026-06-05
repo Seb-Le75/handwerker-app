@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, OctagonX, Plus, Save, SkipForward } from "lucide-react";
 
 import { AcceptanceStep } from "@/components/AcceptanceStep";
@@ -26,7 +26,7 @@ import {
   mockTools
 } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { createId, formatCustomerName } from "@/lib/utils";
+import { createId, formatCustomerName, formatAddress } from "@/lib/utils";
 import type {
   CostCategory,
   Customer,
@@ -114,6 +114,27 @@ export function JobWizard() {
     () => customers.find((customer) => customer.id === draft.customerId),
     [customers, draft.customerId]
   );
+  const searchParams = useSearchParams();
+
+  // Wenn ein customerId Query-Parameter gesetzt ist, versuchen wir den Kunden vorauszuwählen
+  // und direkt auf Schritt 1 zu springen, falls der Kunde existiert und nicht archiviert ist.
+  useEffect(() => {
+    const paramCustomerId = searchParams?.get("customerId");
+    if (!paramCustomerId) return;
+    // Falls bereits ein Kunde ausgewählt wurde, nicht überschreiben
+    if (draft.customerId) return;
+    // Nur beim initialen Schritt reagieren
+    if (step !== 0) return;
+    const exists = customers.some((c) => c.id === paramCustomerId && c.archived !== true);
+    if (exists) {
+      setDraft((d) => ({ ...d, customerId: paramCustomerId }));
+      // Direkt zum nächsten Schritt wechseln (Einsatzart), damit der Nutzer sofort mit der Auftragserfassung beginnen kann
+      setStep(1);
+    }
+  }, [searchParams, customers, draft.customerId, step]);
+
+  // Kunden, die für neue Aufträge auswählbar sind (archivierte Kunden ausblenden)
+  const selectableCustomers = customers.filter((c) => c.archived !== true);
 
   const updateDraft = (next: Partial<JobDraft>) => setDraft((current) => ({ ...current, ...next }));
   const canContinue = validateStep(step, draft);
@@ -286,7 +307,7 @@ export function JobWizard() {
       return (
         <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
           <div className="grid gap-3">
-            {customers.map((customer) => {
+            {selectableCustomers.map((customer) => {
               const active = customer.id === draft.customerId;
               return (
                 <button
@@ -303,7 +324,7 @@ export function JobWizard() {
                   <span className="block text-base font-semibold">
                     {formatCustomerName(customer.firstName, customer.lastName)}
                   </span>
-                  <span className="mt-1 block text-sm text-muted-foreground">{customer.address}</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">{formatAddress(customer)}</span>
                   <span className="mt-2 block text-sm font-medium">{customer.phone}</span>
                 </button>
               );

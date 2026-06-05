@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { formatCustomerName, formatDateTime } from "@/lib/utils";
+import { formatCustomerName, formatDateTime, formatAddress } from "@/lib/utils";
 import type { CostCategory, Customer, Job } from "@/types";
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -136,7 +136,7 @@ export default function JobDetailPage() {
               />
               <DetailRow label="Telefon" value={customer?.phone} />
               <DetailRow label="E-Mail" value={customer?.email} />
-              <DetailRow label="Adresse" value={customer?.address} />
+              <DetailRow label="Adresse" value={formatAddress(customer)} />
             </section>
 
             {job.type === "Wartung" && (

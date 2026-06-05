@@ -8,7 +8,15 @@ export const mockCustomers: Customer[] = [
     lastName: "Schneider",
     phone: "+49 171 2233445",
     email: "m.schneider@example.de",
-    address: "Lindenstrasse 14, 10249 Berlin"
+    // structured address fields
+    street: "Lindenstrasse",
+    houseNumber: "14",
+    postalCode: "10249",
+    city: "Berlin",
+    // legacy free-text address for backward compatibility
+    address: "Lindenstrasse 14, 10249 Berlin",
+    archived: false,
+    archivedAt: null
   },
   {
     id: "cust-1002",
@@ -17,7 +25,13 @@ export const mockCustomers: Customer[] = [
     lastName: "Keller",
     phone: "+49 160 9988776",
     email: "tobias.keller@example.de",
-    address: "Hafenweg 8, 20457 Hamburg"
+    street: "Hafenweg",
+    houseNumber: "8",
+    postalCode: "20457",
+    city: "Hamburg",
+    address: "Hafenweg 8, 20457 Hamburg",
+    archived: false,
+    archivedAt: null
   },
   {
     id: "cust-1003",
@@ -26,7 +40,13 @@ export const mockCustomers: Customer[] = [
     lastName: "Lehmann",
     phone: "+49 176 4455667",
     email: "nora.lehmann@example.de",
-    address: "Schlossallee 22, 70173 Stuttgart"
+    street: "Schlossallee",
+    houseNumber: "22",
+    postalCode: "70173",
+    city: "Stuttgart",
+    address: "Schlossallee 22, 70173 Stuttgart",
+    archived: false,
+    archivedAt: null
   }
 ];
 

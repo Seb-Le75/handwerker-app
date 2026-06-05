@@ -5,7 +5,17 @@ export type Customer = {
   lastName: string;
   phone: string;
   email: string;
-  address: string;
+  // Freitext-Addressfeld (alt, optional - wird als Fallback verwendet)
+  address?: string;
+  // Neue strukturierte Adressfelder
+  street?: string;
+  houseNumber?: string;
+  postalCode?: string;
+  city?: string;
+  // Archivierungsstatus: true = Kunde ist archiviert und wird standardmäßig ausgeblendet
+  archived?: boolean;
+  // Zeitpunkt der Archivierung (optional)
+  archivedAt?: string | null;
 };
 
 export type JobType = "Reparatur" | "Notdienst" | "Wartung" | "Angebot" | "Installation";
