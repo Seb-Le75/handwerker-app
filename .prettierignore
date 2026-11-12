@@ -1,0 +1,11 @@
+.next
+node_modules
+dist
+out
+coverage
+playwright-report
+test-results
+package-lock.json
+db/migrations
+docs/HANDWERKER_APP_2_AUDIT_UND_IMPLEMENTIERUNGSPROMPT.md
+docs/PHASE_0_1_FREIGABEPLAN.md

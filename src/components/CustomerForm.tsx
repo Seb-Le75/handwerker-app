@@ -52,11 +52,12 @@ export function CustomerForm({ onCreate }: CustomerFormProps) {
   // Wenn das Feld noch leer ist, automatisch Vorschlag eintragen (bleibt editierbar)
   useEffect(() => {
     if (!form.customerNumber || !form.customerNumber.trim()) {
-      setForm((current) => ({ ...current, customerNumber: suggestedCustomerNumber }));
+      queueMicrotask(() => setForm((current) => ({ ...current, customerNumber: suggestedCustomerNumber })));
     }
-  }, [suggestedCustomerNumber]);
+  }, [form.customerNumber, suggestedCustomerNumber]);
 
-  const addressString = `${form.street.trim()} ${form.houseNumber.trim()}, ${form.postalCode.trim()} ${form.city.trim()}`.trim();
+  const addressString =
+    `${form.street.trim()} ${form.houseNumber.trim()}, ${form.postalCode.trim()} ${form.city.trim()}`.trim();
 
   const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
   const [cityError, setCityError] = useState<string | null>(null);
@@ -80,7 +81,8 @@ export function CustomerForm({ onCreate }: CustomerFormProps) {
     return ok;
   }
 
-  const canSubmit = form.firstName.trim() && form.lastName.trim() && form.phone.trim() && form.postalCode.trim() && form.city.trim();
+  const canSubmit =
+    form.firstName.trim() && form.lastName.trim() && form.phone.trim() && form.postalCode.trim() && form.city.trim();
 
   return (
     <form
@@ -122,7 +124,11 @@ export function CustomerForm({ onCreate }: CustomerFormProps) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="firstName">Vorname</Label>
-        <Input id="firstName" value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} />
+        <Input
+          id="firstName"
+          value={form.firstName}
+          onChange={(event) => updateField("firstName", event.target.value)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="lastName">Nachname</Label>
@@ -134,7 +140,12 @@ export function CustomerForm({ onCreate }: CustomerFormProps) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">E-Mail</Label>
-        <Input id="email" type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} />
+        <Input
+          id="email"
+          type="email"
+          value={form.email}
+          onChange={(event) => updateField("email", event.target.value)}
+        />
       </div>
 
       <div className="space-y-2 md:col-span-2">
@@ -143,11 +154,19 @@ export function CustomerForm({ onCreate }: CustomerFormProps) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="houseNumber">Hausnummer</Label>
-        <Input id="houseNumber" value={form.houseNumber} onChange={(event) => updateField("houseNumber", event.target.value)} />
+        <Input
+          id="houseNumber"
+          value={form.houseNumber}
+          onChange={(event) => updateField("houseNumber", event.target.value)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="postalCode">Postleitzahl</Label>
-        <Input id="postalCode" value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} />
+        <Input
+          id="postalCode"
+          value={form.postalCode}
+          onChange={(event) => updateField("postalCode", event.target.value)}
+        />
         {postalCodeError && <p className="mt-1 text-sm text-red-600">{postalCodeError}</p>}
       </div>
       <div className="space-y-2">

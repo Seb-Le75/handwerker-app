@@ -29,14 +29,16 @@ export default function CustomersPage() {
   // Migration: fehlende Archivierungsfelder ergänzen, sobald localStorage geladen ist
   useEffect(() => {
     if (!customersHydrated) return;
-    const needsMigration = customers.some((c) => typeof c.archived === "undefined" || typeof c.archivedAt === "undefined");
+    const needsMigration = customers.some(
+      (c) => typeof c.archived === "undefined" || typeof c.archivedAt === "undefined"
+    );
     if (needsMigration) {
       const migrated = customers.map((c) => ({
         ...c,
         archived: c.archived ?? false,
         archivedAt: typeof c.archivedAt === "undefined" ? null : c.archivedAt
       }));
-      setCustomers(migrated);
+      queueMicrotask(() => setCustomers(migrated));
     }
   }, [customersHydrated, customers, setCustomers]);
 
@@ -109,7 +111,9 @@ export default function CustomersPage() {
                     {customer.archived && (
                       <span className="ml-2 inline-flex items-center gap-2">
                         <Badge>Archiviert</Badge>
-                        {customer.archivedAt && <span className="text-xs text-muted-foreground">{formatDateTime(customer.archivedAt)}</span>}
+                        {customer.archivedAt && (
+                          <span className="text-xs text-muted-foreground">{formatDateTime(customer.archivedAt)}</span>
+                        )}
                       </span>
                     )}
                   </div>

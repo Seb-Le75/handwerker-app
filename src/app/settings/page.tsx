@@ -37,7 +37,7 @@ export default function SettingsPage() {
     const input = materialRefs.current[focusMaterialId];
     input?.scrollIntoView({ behavior: "smooth", block: "center" });
     input?.focus();
-    setFocusMaterialId("");
+    queueMicrotask(() => setFocusMaterialId(""));
   }, [focusMaterialId, materials.length]);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function SettingsPage() {
     const input = toolRefs.current[focusToolId];
     input?.scrollIntoView({ behavior: "smooth", block: "center" });
     input?.focus();
-    setFocusToolId("");
+    queueMicrotask(() => setFocusToolId(""));
   }, [focusToolId, tools.length]);
 
   function updateMaterial(id: string, next: Partial<MaterialCatalogItem>) {

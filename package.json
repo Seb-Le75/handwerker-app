@@ -2,11 +2,30 @@
   "name": "handwerker-service-app",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11.8.0 <12"
+  },
+  "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "format": "prettier --write .github db scripts tests docs/adr docs/architecture docs/threat-model docs/operations eslint.config.mjs prettier.config.mjs playwright.config.ts vitest.config.mts vitest.integration.config.mts src/lib/env README.md package.json compose.yaml",
+    "format:check": "prettier --check .github db scripts tests docs/adr docs/architecture docs/threat-model docs/operations eslint.config.mjs prettier.config.mjs playwright.config.ts vitest.config.mts vitest.integration.config.mts src/lib/env README.md package.json compose.yaml",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "test:e2e": "playwright test",
+    "security:secrets": "node scripts/check-secrets.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:health": "node db/health.mjs",
+    "db:migrate": "node db/migrate.mjs",
+    "db:seed": "node db/seed.mjs",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.3",
@@ -15,21 +34,30 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "next": "^15.1.3",
+    "next": "16.4.6",
+    "postgres": "4.1.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.7.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^15.1.3",
+    "@playwright/test": "1.65.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "jsdom": "31.0.0",
+    "prettier": "3.10.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "3.4.17",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0"
   }
 }

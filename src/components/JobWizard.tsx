@@ -41,7 +41,16 @@ import type {
   ToolCatalogItem
 } from "@/types";
 
-const steps = ["Kunde", "Einsatzart", "Rechtliches", "Auftragsdetails", "Arbeitszeiten", "Material", "Abnahme", "Uebersicht"];
+const steps = [
+  "Kunde",
+  "Einsatzart",
+  "Rechtliches",
+  "Auftragsdetails",
+  "Arbeitszeiten",
+  "Material",
+  "Abnahme",
+  "Uebersicht"
+];
 const requiredSteps = new Set([0, 1, 2]);
 const technicianRoles: TechnicianRole[] = ["Lehrling", "Geselle", "Meister"];
 const costCategories: Array<{ value: CostCategory; label: string; amount?: string }> = [
@@ -108,7 +117,10 @@ export function JobWizard() {
   const [materialCatalog] = useLocalStorage<MaterialCatalogItem[]>("hsa-materials", mockMaterials);
   const [toolCatalog] = useLocalStorage<ToolCatalogItem[]>("hsa-tools", mockTools);
   const [emergencySurcharges] = useLocalStorage("hsa-emergency-surcharges", mockEmergencySurcharges);
-  const [maintenanceChecksCatalog] = useLocalStorage<MaintenanceCheckItem[]>("hsa-maintenance-checks", mockMaintenanceChecks);
+  const [maintenanceChecksCatalog] = useLocalStorage<MaintenanceCheckItem[]>(
+    "hsa-maintenance-checks",
+    mockMaintenanceChecks
+  );
   const [draft, setDraft] = useState<JobDraft>(initialDraft);
   const selectedCustomer = useMemo(
     () => customers.find((customer) => customer.id === draft.customerId),
@@ -127,9 +139,11 @@ export function JobWizard() {
     if (step !== 0) return;
     const exists = customers.some((c) => c.id === paramCustomerId && c.archived !== true);
     if (exists) {
-      setDraft((d) => ({ ...d, customerId: paramCustomerId }));
-      // Direkt zum nächsten Schritt wechseln (Einsatzart), damit der Nutzer sofort mit der Auftragserfassung beginnen kann
-      setStep(1);
+      queueMicrotask(() => {
+        setDraft((d) => ({ ...d, customerId: paramCustomerId }));
+        // Direkt zum nächsten Schritt wechseln (Einsatzart), damit der Nutzer sofort mit der Auftragserfassung beginnen kann
+        setStep(1);
+      });
     }
   }, [searchParams, customers, draft.customerId, step]);
 
@@ -232,8 +246,8 @@ export function JobWizard() {
     updateDraft({
       type,
       emergencySurchargePercent:
-        type === "Notdienst" ? draft.emergencySurchargePercent ?? emergencySurcharges[0]?.percent ?? 50 : undefined,
-      maintenanceChecks: type === "Wartung" ? draft.maintenanceChecks ?? [] : []
+        type === "Notdienst" ? (draft.emergencySurchargePercent ?? emergencySurcharges[0]?.percent ?? 50) : undefined,
+      maintenanceChecks: type === "Wartung" ? (draft.maintenanceChecks ?? []) : []
     });
   }
 
@@ -256,7 +270,9 @@ export function JobWizard() {
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>{steps[step]}</CardTitle>
-              <CardDescription>Schritt {step + 1} von {steps.length}</CardDescription>
+              <CardDescription>
+                Schritt {step + 1} von {steps.length}
+              </CardDescription>
             </div>
             {selectedCustomer && (
               <Badge>
@@ -271,7 +287,13 @@ export function JobWizard() {
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="button" variant="outline" size="lg" disabled={step === 0} onClick={() => setStep((current) => current - 1)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={step === 0}
+            onClick={() => setStep((current) => current - 1)}
+          >
             <ArrowLeft className="h-5 w-5" />
             Zurueck
           </Button>
@@ -351,7 +373,9 @@ export function JobWizard() {
               type="button"
               key={type}
               className={`min-h-24 rounded-lg border bg-white p-4 text-left text-lg font-semibold shadow-sm transition-colors ${
-                draft.type === type ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200" : "hover:bg-secondary/60"
+                draft.type === type
+                  ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200"
+                  : "hover:bg-secondary/60"
               }`}
               onClick={() => selectJobType(type as JobType)}
             >
@@ -362,7 +386,9 @@ export function JobWizard() {
             <div className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm sm:col-span-2 lg:col-span-5">
               <div>
                 <h3 className="text-lg font-semibold tracking-normal">Notdienst-Zulage</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Der Aufschlag wird bei Notdienst automatisch angezeigt.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Der Aufschlag wird bei Notdienst automatisch angezeigt.
+                </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {emergencySurcharges.map((surcharge) => {
@@ -372,7 +398,9 @@ export function JobWizard() {
                       key={surcharge.id}
                       type="button"
                       className={`min-h-16 rounded-md border px-4 text-left shadow-sm transition-colors ${
-                        selected ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200" : "bg-white hover:bg-secondary/60"
+                        selected
+                          ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200"
+                          : "bg-white hover:bg-secondary/60"
                       }`}
                       onClick={() => updateDraft({ emergencySurchargePercent: surcharge.percent })}
                     >
@@ -427,11 +455,21 @@ export function JobWizard() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="startTime">Beginn</Label>
-              <Input id="startTime" type="time" value={draft.startTime} onChange={(event) => updateDraft({ startTime: event.target.value })} />
+              <Input
+                id="startTime"
+                type="time"
+                value={draft.startTime}
+                onChange={(event) => updateDraft({ startTime: event.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endTime">Ende</Label>
-              <Input id="endTime" type="time" value={draft.endTime} onChange={(event) => updateDraft({ endTime: event.target.value })} />
+              <Input
+                id="endTime"
+                type="time"
+                value={draft.endTime}
+                onChange={(event) => updateDraft({ endTime: event.target.value })}
+              />
             </div>
           </div>
 
@@ -465,7 +503,10 @@ export function JobWizard() {
               {Array.from({ length: draft.technicianCount ?? 1 }, (_, index) => {
                 const selectedRole = draft.technicianRoles?.[index] ?? "Geselle";
                 return (
-                  <div key={index} className="grid gap-2 rounded-lg border bg-white p-3 shadow-sm md:grid-cols-[10rem_1fr] md:items-center">
+                  <div
+                    key={index}
+                    className="grid gap-2 rounded-lg border bg-white p-3 shadow-sm md:grid-cols-[10rem_1fr] md:items-center"
+                  >
                     <span className="font-semibold">Monteur {index + 1}</span>
                     <div className="grid gap-2 sm:grid-cols-3">
                       {technicianRoles.map((role) => {
@@ -475,7 +516,9 @@ export function JobWizard() {
                             key={role}
                             type="button"
                             className={`min-h-12 rounded-md border px-4 text-left text-sm font-semibold shadow-sm transition-colors ${
-                              selected ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200" : "bg-white hover:bg-secondary/60"
+                              selected
+                                ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200"
+                                : "bg-white hover:bg-secondary/60"
                             }`}
                             onClick={() => {
                               const technicianRolesNext = Array.from(
@@ -525,7 +568,9 @@ export function JobWizard() {
             <div className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm">
               <div>
                 <h3 className="text-lg font-semibold tracking-normal">Regelpruefungen / Wartungen</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Konfigurierte Wartungspunkte fuer diesen Auftrag auswaehlen.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Konfigurierte Wartungspunkte fuer diesen Auftrag auswaehlen.
+                </p>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
                 {availableMaintenanceChecks.map((check) => {
@@ -535,7 +580,9 @@ export function JobWizard() {
                       key={check.id}
                       type="button"
                       className={`min-h-14 rounded-md border px-4 py-3 text-left text-sm font-semibold shadow-sm transition-colors ${
-                        selected ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200" : "bg-white hover:bg-secondary/60"
+                        selected
+                          ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200"
+                          : "bg-white hover:bg-secondary/60"
                       }`}
                       onClick={() => toggleMaintenanceCheck(check)}
                     >
@@ -558,7 +605,10 @@ export function JobWizard() {
               </div>
               <div className="grid">
                 {materialLines.map((line) => (
-                  <div key={line.id} className="grid grid-cols-[7rem_9rem_1fr_10rem_11rem] gap-3 border-b px-4 py-3 last:border-b-0">
+                  <div
+                    key={line.id}
+                    className="grid grid-cols-[7rem_9rem_1fr_10rem_11rem] gap-3 border-b px-4 py-3 last:border-b-0"
+                  >
                     <Input
                       type="number"
                       min="0"
@@ -566,7 +616,9 @@ export function JobWizard() {
                       value={line.quantity}
                       onChange={(event) => updateMaterialLine(line.id, { quantity: Number(event.target.value) })}
                     />
-                    <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-sm font-medium">{line.unit}</div>
+                    <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-sm font-medium">
+                      {line.unit}
+                    </div>
                     <select
                       className="min-h-12 rounded-md border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       value={line.materialId}
@@ -596,7 +648,9 @@ export function JobWizard() {
               <Plus className="h-5 w-5" />
               Neue Materialzeile
             </Button>
-            <div className="rounded-lg bg-secondary/70 px-4 py-3 text-base font-semibold">Materialsumme: {formatCurrency(materialSum)}</div>
+            <div className="rounded-lg bg-secondary/70 px-4 py-3 text-base font-semibold">
+              Materialsumme: {formatCurrency(materialSum)}
+            </div>
           </div>
 
           <div className="grid gap-4">
@@ -614,7 +668,10 @@ export function JobWizard() {
                 </div>
                 <div className="grid">
                   {toolLines.map((line) => (
-                    <div key={line.id} className="grid grid-cols-[7rem_1fr_10rem_11rem] gap-3 border-b px-4 py-3 last:border-b-0">
+                    <div
+                      key={line.id}
+                      className="grid grid-cols-[7rem_1fr_10rem_11rem] gap-3 border-b px-4 py-3 last:border-b-0"
+                    >
                       <Input
                         type="number"
                         min="0"
@@ -651,7 +708,9 @@ export function JobWizard() {
                 <Plus className="h-5 w-5" />
                 Neue Werkzeugzeile
               </Button>
-              <div className="rounded-lg bg-secondary/70 px-4 py-3 text-base font-semibold">Werkzeugsumme: {formatCurrency(toolSum)}</div>
+              <div className="rounded-lg bg-secondary/70 px-4 py-3 text-base font-semibold">
+                Werkzeugsumme: {formatCurrency(toolSum)}
+              </div>
             </div>
           </div>
         </div>
@@ -688,7 +747,9 @@ function CostCategorySelector({
               key={category.value}
               type="button"
               className={`min-h-16 rounded-md border px-4 text-left shadow-sm transition-colors ${
-                selected ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200" : "bg-white hover:bg-secondary/60"
+                selected
+                  ? "border-sky-400 bg-sky-100 text-slate-950 ring-2 ring-sky-200"
+                  : "bg-white hover:bg-secondary/60"
               }`}
               onClick={() => onChange(category.value)}
             >

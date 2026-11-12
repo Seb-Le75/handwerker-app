@@ -28,6 +28,18 @@ type CustomerEditForm = {
   city: string;
 };
 
+const emptyCustomerEditForm: CustomerEditForm = {
+  customerNumber: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+  street: "",
+  houseNumber: "",
+  postalCode: "",
+  city: ""
+};
+
 function toEditForm(customer: Customer): CustomerEditForm {
   return {
     customerNumber: customer.customerNumber ?? "",
@@ -53,7 +65,9 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     if (!customersHydrated) return;
     // ensure archived fields exist (lightweight migration)
-    const needsMigration = customers.some((c) => typeof c.archived === "undefined" || typeof c.archivedAt === "undefined");
+    const needsMigration = customers.some(
+      (c) => typeof c.archived === "undefined" || typeof c.archivedAt === "undefined"
+    );
     if (needsMigration) {
       const migrated = customers.map((c) => ({
         ...c,
@@ -65,27 +79,12 @@ export default function CustomerDetailPage() {
   }, [customersHydrated, customers, setCustomers]);
 
   // edit form state must be declared unconditionally to satisfy React Hook rules
-  const emptyEditForm: CustomerEditForm = {
-    customerNumber: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-    street: "",
-    houseNumber: "",
-    postalCode: "",
-    city: ""
-  };
-  const [editForm, setEditForm] = useState<CustomerEditForm>(customer ? toEditForm(customer) : emptyEditForm);
+  const [editForm, setEditForm] = useState<CustomerEditForm>(customer ? toEditForm(customer) : emptyCustomerEditForm);
 
   // edit form sync
   // keep editForm in sync with the loaded customer
   useEffect(() => {
-    if (customer) {
-      setEditForm(toEditForm(customer));
-    } else {
-      setEditForm(emptyEditForm);
-    }
+    queueMicrotask(() => setEditForm(customer ? toEditForm(customer) : emptyCustomerEditForm));
   }, [customer]);
 
   // Additional hook state for validation must be declared before any early returns
@@ -173,7 +172,8 @@ export default function CustomerDetailPage() {
               houseNumber: editForm.houseNumber.trim(),
               postalCode: editForm.postalCode.trim(),
               city: editForm.city.trim(),
-              address: `${editForm.street.trim()} ${editForm.houseNumber.trim()}, ${editForm.postalCode.trim()} ${editForm.city.trim()}`.trim()
+              address:
+                `${editForm.street.trim()} ${editForm.houseNumber.trim()}, ${editForm.postalCode.trim()} ${editForm.city.trim()}`.trim()
             }
           : c
       )
@@ -198,10 +198,12 @@ export default function CustomerDetailPage() {
           <CardHeader>
             <CardTitle>Kundendaten</CardTitle>
             <CardDescription>
-              {customer ? `${customer.customerNumber ? `${customer.customerNumber} · ` : ""}${formatCustomerName(
-                customer.firstName,
-                customer.lastName
-              )}` : "Noch kein Kunde ausgewaehlt"}
+              {customer
+                ? `${customer.customerNumber ? `${customer.customerNumber} · ` : ""}${formatCustomerName(
+                    customer.firstName,
+                    customer.lastName
+                  )}`
+                : "Noch kein Kunde ausgewaehlt"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -223,36 +225,69 @@ export default function CustomerDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editFirstName">Vorname</Label>
-                  <Input id="editFirstName" value={editForm.firstName} onChange={(event) => updateEditField("firstName", event.target.value)} />
+                  <Input
+                    id="editFirstName"
+                    value={editForm.firstName}
+                    onChange={(event) => updateEditField("firstName", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editLastName">Nachname</Label>
-                  <Input id="editLastName" value={editForm.lastName} onChange={(event) => updateEditField("lastName", event.target.value)} />
+                  <Input
+                    id="editLastName"
+                    value={editForm.lastName}
+                    onChange={(event) => updateEditField("lastName", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editPhone">Telefon</Label>
-                  <Input id="editPhone" value={editForm.phone} onChange={(event) => updateEditField("phone", event.target.value)} />
+                  <Input
+                    id="editPhone"
+                    value={editForm.phone}
+                    onChange={(event) => updateEditField("phone", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editEmail">E-Mail</Label>
-                  <Input id="editEmail" type="email" value={editForm.email} onChange={(event) => updateEditField("email", event.target.value)} />
+                  <Input
+                    id="editEmail"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(event) => updateEditField("email", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="editStreet">Straße</Label>
-                  <Input id="editStreet" value={editForm.street} onChange={(event) => updateEditField("street", event.target.value)} />
+                  <Input
+                    id="editStreet"
+                    value={editForm.street}
+                    onChange={(event) => updateEditField("street", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editHouseNumber">Hausnummer</Label>
-                  <Input id="editHouseNumber" value={editForm.houseNumber} onChange={(event) => updateEditField("houseNumber", event.target.value)} />
+                  <Input
+                    id="editHouseNumber"
+                    value={editForm.houseNumber}
+                    onChange={(event) => updateEditField("houseNumber", event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editPostalCode">Postleitzahl</Label>
-                  <Input id="editPostalCode" value={editForm.postalCode} onChange={(event) => updateEditField("postalCode", event.target.value)} />
+                  <Input
+                    id="editPostalCode"
+                    value={editForm.postalCode}
+                    onChange={(event) => updateEditField("postalCode", event.target.value)}
+                  />
                   {postalCodeError && <p className="mt-1 text-sm text-red-600">{postalCodeError}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editCity">Ort</Label>
-                  <Input id="editCity" value={editForm.city} onChange={(event) => updateEditField("city", event.target.value)} />
+                  <Input
+                    id="editCity"
+                    value={editForm.city}
+                    onChange={(event) => updateEditField("city", event.target.value)}
+                  />
                   {cityError && <p className="mt-1 text-sm text-red-600">{cityError}</p>}
                 </div>
                 <div className="md:col-span-2 flex items-center gap-3">
@@ -266,7 +301,9 @@ export default function CustomerDetailPage() {
                       variant="secondary"
                       onClick={() => {
                         // Reaktivieren
-                        setCustomers(customers.map((c) => (c.id === customer.id ? { ...c, archived: false, archivedAt: null } : c)));
+                        setCustomers(
+                          customers.map((c) => (c.id === customer.id ? { ...c, archived: false, archivedAt: null } : c))
+                        );
                       }}
                     >
                       Reaktivieren
@@ -278,13 +315,18 @@ export default function CustomerDetailPage() {
                       variant="outline"
                       onClick={() => {
                         const openCount = (selectedJobs ?? []).filter((j) => j.status === "Offen").length;
-                        const message = openCount > 0
-                          ? `Kunden wirklich archivieren? Dieser Kunde hat ${openCount} offene Aufträge. Archivierte Kunden sind nicht mehr für neue Aufträge auswählbar.`
-                          : "Kunden wirklich archivieren? Archivierte Kunden sind nicht mehr für neue Aufträge auswählbar.";
+                        const message =
+                          openCount > 0
+                            ? `Kunden wirklich archivieren? Dieser Kunde hat ${openCount} offene Aufträge. Archivierte Kunden sind nicht mehr für neue Aufträge auswählbar.`
+                            : "Kunden wirklich archivieren? Archivierte Kunden sind nicht mehr für neue Aufträge auswählbar.";
                         if (!confirm(message)) {
                           return;
                         }
-                        setCustomers(customers.map((c) => (c.id === customer.id ? { ...c, archived: true, archivedAt: new Date().toISOString() } : c)));
+                        setCustomers(
+                          customers.map((c) =>
+                            c.id === customer.id ? { ...c, archived: true, archivedAt: new Date().toISOString() } : c
+                          )
+                        );
                       }}
                     >
                       Archivieren
@@ -325,7 +367,9 @@ export default function CustomerDetailPage() {
                       <h3 className="font-semibold">{job.type}</h3>
                       <Badge>{job.status}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{job.description || "Keine Auftragsdetails erfasst"}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {job.description || "Keine Auftragsdetails erfasst"}
+                    </p>
                     <p className="mt-2 text-sm font-medium">{formatDateTime(job.createdAt)}</p>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />
