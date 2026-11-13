@@ -24,6 +24,7 @@ const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull(
 const version = () => integer("version").notNull().default(1);
 const currentTenantId = sql`app_private.current_tenant_id()`;
 const currentUserId = sql`app_private.current_user_id()`;
+const currentAuthSubject = sql`app_private.current_auth_subject()`;
 
 export const roles = pgTable("roles", {
   code: text("code").primaryKey(),
@@ -122,6 +123,11 @@ export const users = pgTable(
       to: applicationRole,
       using: sql`${table.id} = ${currentUserId}`
     }),
+    pgPolicy("users_current_auth_subject", {
+      for: "select",
+      to: applicationRole,
+      using: sql`${table.authSubject} = ${currentAuthSubject}`
+    }),
     pgPolicy("users_same_tenant", {
       for: "select",
       to: applicationRole,
@@ -172,6 +178,11 @@ export const memberships = pgTable(
       to: applicationRole,
       using: sql`${table.tenantId} = ${currentTenantId}`,
       withCheck: sql`${table.tenantId} = ${currentTenantId}`
+    }),
+    pgPolicy("memberships_current_identity", {
+      for: "select",
+      to: applicationRole,
+      using: sql`${table.userId} = ${currentUserId}`
     })
   ]
 ).enableRLS();

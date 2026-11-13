@@ -3,6 +3,7 @@ import { v7 as uuidv7 } from "uuid";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createSqlClient } from "@/db/client";
+import { resolveIdentity } from "@/db/identity-context";
 import { tenantSettings } from "@/db/schema";
 import { InvalidTenantContextError, withTenantContext } from "@/db/tenant-context";
 
@@ -121,6 +122,22 @@ describe.skipIf(!admin)("tenant isolation", () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it("resolves only the authenticated user's active memberships before tenant selection", async () => {
+    if (!databaseUrl) throw new Error("DATABASE_URL is required.");
+    const client = createSqlClient(databaseUrl);
+
+    try {
+      await expect(resolveIdentity(client, "unknown-subject")).resolves.toBeNull();
+      await expect(resolveIdentity(client, "auth-user-a")).resolves.toMatchObject({
+        userId: userAId,
+        email: "admin@alpha.example",
+        memberships: [{ membershipId: membershipAId, tenantId: tenantAId, roleCode: "owner_admin" }]
+      });
+    } finally {
+      await client.end();
+    }
   });
 
   it("shows tenant A data and same-tenant users, but never tenant B", async () => {

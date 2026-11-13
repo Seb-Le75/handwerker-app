@@ -8,3 +8,15 @@ test("the existing dashboard loads", async ({ page }) => {
   expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response?.headers()["x-frame-options"]).toBe("DENY");
 });
+
+test("the local authentication and team preview are visible", async ({ page }) => {
+  await page.goto("/login");
+
+  await expect(page.getByRole("heading", { name: "Willkommen zurück" })).toBeVisible();
+  await expect(page.getByText("Lokale Entwicklungsvorschau")).toBeVisible();
+
+  await page.getByRole("link", { name: /Vorschau öffnen/ }).click();
+  await expect(page.getByRole("heading", { name: "Hansen Sanitär & Heizung GmbH" })).toBeVisible();
+  await expect(page.getByText("Lokale Vorschau mit Beispieldaten")).toBeVisible();
+  await expect(page.getByText("Mara Klein")).toBeVisible();
+});

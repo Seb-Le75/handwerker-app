@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, LayoutDashboard, Settings, UserRoundPlus, UsersRound } from "lucide-react";
+import { ClipboardList, LayoutDashboard, Settings, ShieldCheck, UserRoundPlus, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/new", label: "Neuer Auftrag", icon: UserRoundPlus },
   { href: "/jobs", label: "Auftraege", icon: ClipboardList },
   { href: "/customers", label: "Kunden", icon: UsersRound },
+  { href: "/admin", label: "Team", icon: ShieldCheck },
   { href: "/settings", label: "Einstellungen", icon: Settings }
 ];
 
@@ -29,9 +30,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-semibold tracking-normal">Handwerker Service App</h1>
           </div>
         </Link>
-        <nav className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
           {navItems.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             const Icon = item.icon;
             return (
               <Link
@@ -39,7 +40,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 className={cn(
                   "flex min-h-12 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors",
-                  active ? "bg-primary text-primary-foreground" : "bg-secondary/70 text-secondary-foreground hover:bg-secondary"
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/70 text-secondary-foreground hover:bg-secondary"
                 )}
               >
                 <Icon className="h-4 w-4" />
