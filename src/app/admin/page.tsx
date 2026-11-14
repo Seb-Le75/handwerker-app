@@ -1,8 +1,10 @@
-import { Building2, CheckCircle2, Clock3, KeyRound, MailPlus, ShieldCheck, UsersRound } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, FileClock, KeyRound, MailPlus, ShieldCheck, UsersRound } from "lucide-react";
+import Link from "next/link";
 
 import { InviteMemberForm } from "@/app/admin/InviteMemberForm";
 import { InvitationControls } from "@/app/admin/InvitationControls";
 import { MemberControls } from "@/app/admin/MemberControls";
+import { TenantSwitcher } from "@/app/admin/TenantSwitcher";
 import { hasPermission } from "@/auth/authorization";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,7 @@ export default async function AdminPage() {
   const canInvite = hasPermission(overview.permissions, "members.invite");
   const canChangeRoles = hasPermission(overview.permissions, "members.role.assign");
   const canDisable = hasPermission(overview.permissions, "members.disable");
+  const canReadAudit = hasPermission(overview.permissions, "audit.read");
   const preview = overview.mode === "preview";
 
   return (
@@ -51,6 +54,18 @@ export default async function AdminPage() {
             </a>
           </Button>
         </section>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Betriebskontext</CardTitle>
+            <CardDescription>
+              Jeder Wechsel wird gegen deine Mitgliedschaften geprüft und im Zielbetrieb auditiert.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TenantSwitcher activeTenantId={overview.tenant.id} tenants={overview.tenants} preview={preview} />
+          </CardContent>
+        </Card>
 
         <section className="grid gap-4 md:grid-cols-3">
           <Card>
@@ -155,6 +170,22 @@ export default async function AdminPage() {
                 </div>
               </CardContent>
             </Card>
+            {canReadAudit ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audit-Protokoll</CardTitle>
+                  <CardDescription>Sicherheitsrelevante Änderungen dieses Betriebs.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/admin/audit">
+                      <FileClock className="h-4 w-4" />
+                      Protokoll öffnen
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : null}
             <Card>
               <CardHeader>
                 <CardTitle>Offene Einladungen</CardTitle>
@@ -188,6 +219,8 @@ export default async function AdminPage() {
                 <p className="text-emerald-700">✓ Einladungen sicher vorbereiten</p>
                 <p className="text-emerald-700">✓ Rollenwechsel auditieren</p>
                 <p className="text-emerald-700">✓ Letzten Admin schützen</p>
+                <p className="text-emerald-700">✓ Betrieb sicher wechseln</p>
+                <p className="text-emerald-700">✓ Audit-Protokoll anzeigen</p>
                 <p>Als Nächstes: Annahme und E-Mail-Zustellung</p>
               </CardContent>
             </Card>

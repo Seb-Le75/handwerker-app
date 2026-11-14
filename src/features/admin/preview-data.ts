@@ -17,7 +17,10 @@ export const previewAdminOverview: AdminOverview = {
     roleLabel: "Inhaber / Admin",
     assuranceLevel: "aal2"
   },
-  tenants: [{ id: "preview-hansen-shk", name: "Hansen Sanitär & Heizung GmbH", roleCode: "owner_admin" }],
+  tenants: [
+    { id: "preview-hansen-shk", name: "Hansen Sanitär & Heizung GmbH", roleCode: "owner_admin" },
+    { id: "preview-nord-service", name: "Nord Service GmbH", roleCode: "office_dispatch" }
+  ],
   permissions: [
     "tenant.read",
     "tenant.update",

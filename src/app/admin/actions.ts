@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { withAuthenticatedTenant } from "@/features/admin/authenticated-context";
+import { activeTenantCookie } from "@/features/admin/constants";
 import {
   assignableRoleCodes,
   changeMemberRole,
@@ -12,6 +15,7 @@ import {
   MemberManagementError,
   revokeInvitation
 } from "@/features/admin/member-service";
+import { switchActiveTenant } from "@/features/admin/tenant-switch-service";
 
 export type AdminActionState = Readonly<{
   status: "idle" | "success" | "error";
@@ -98,4 +102,27 @@ export async function revokeMemberInvitation(
   } catch (error) {
     return actionError(error);
   }
+}
+
+export async function switchTenant(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  void _state;
+  const parsedTenantId = membershipIdSchema.safeParse(formData.get("tenantId"));
+  if (!parsedTenantId.success) return { status: "error", message: "Ungültiger Betrieb." };
+
+  try {
+    const result = await switchActiveTenant(parsedTenantId.data);
+    (await cookies()).set(activeTenantCookie, result.tenantId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+      priority: "high"
+    });
+    revalidatePath("/admin");
+  } catch (error) {
+    return actionError(error);
+  }
+
+  redirect("/admin");
 }
