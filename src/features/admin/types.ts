@@ -15,6 +15,16 @@ export type AdminTenantOption = Readonly<{
   roleCode: string;
 }>;
 
+export type AdminInvitation = Readonly<{
+  id: string;
+  email: string;
+  roleCode: string;
+  roleLabel: string;
+  expiresAt: string;
+}>;
+
+export type AdminRole = Readonly<{ code: string; label: string }>;
+
 export type AdminOverview = Readonly<{
   mode: "live" | "preview";
   tenant: {
@@ -25,6 +35,7 @@ export type AdminOverview = Readonly<{
     locale: string;
   };
   viewer: {
+    membershipId: string;
     name: string;
     email: string;
     roleCode: string;
@@ -34,4 +45,6 @@ export type AdminOverview = Readonly<{
   tenants: AdminTenantOption[];
   permissions: PermissionCode[];
   members: AdminMember[];
+  invitations: AdminInvitation[];
+  roles: AdminRole[];
 }>;

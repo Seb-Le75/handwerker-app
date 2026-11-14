@@ -10,6 +10,7 @@ export const previewAdminOverview: AdminOverview = {
     locale: "de-DE"
   },
   viewer: {
+    membershipId: "preview-member-1",
     name: "Sebastian Hansen",
     email: "sebastian@hansen-shk.de",
     roleCode: "owner_admin",
@@ -51,5 +52,22 @@ export const previewAdminOverview: AdminOverview = {
       roleLabel: "Techniker",
       status: "active"
     }
+  ],
+  invitations: [
+    {
+      id: "preview-invitation-1",
+      email: "lena.becker@beispiel.de",
+      roleCode: "master",
+      roleLabel: "Meister",
+      expiresAt: "2026-11-20T12:00:00.000Z"
+    }
+  ],
+  roles: [
+    { code: "owner_admin", label: "Inhaber / Admin" },
+    { code: "office_dispatch", label: "Büro / Disposition" },
+    { code: "master", label: "Meister" },
+    { code: "technician", label: "Monteur" },
+    { code: "accounting", label: "Buchhaltung" },
+    { code: "read_only", label: "Nur-Lesen" }
   ]
 };

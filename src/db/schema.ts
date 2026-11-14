@@ -13,6 +13,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core";
 
@@ -167,6 +168,7 @@ export const memberships = pgTable(
     unique("memberships_tenant_user_unique").on(table.tenantId, table.userId),
     unique("memberships_tenant_id_unique").on(table.tenantId, table.id),
     index("memberships_user_status_idx").on(table.userId, table.status),
+    index("memberships_tenant_role_status_idx").on(table.tenantId, table.roleCode, table.status),
     check("memberships_version_positive", sql`${table.version} > 0`),
     check(
       "memberships_deactivation_consistent",
@@ -210,6 +212,9 @@ export const invitations = pgTable(
     unique("invitations_tenant_id_unique").on(table.tenantId, table.id),
     unique("invitations_token_digest_unique").on(table.tokenDigest),
     index("invitations_tenant_email_idx").on(table.tenantId, table.email),
+    uniqueIndex("invitations_one_pending_per_tenant_email")
+      .on(table.tenantId, table.email)
+      .where(sql`${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
     foreignKey({
       columns: [table.tenantId, table.invitedByMembershipId],
       foreignColumns: [memberships.tenantId, memberships.id],

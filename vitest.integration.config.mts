@@ -4,12 +4,14 @@ import path from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src")
+      "@": path.resolve(import.meta.dirname, "src"),
+      "server-only": path.resolve(import.meta.dirname, "tests/server-only.ts")
     }
   },
   test: {
     environment: "node",
     include: ["tests/integration/**/*.test.ts"],
+    fileParallelism: false,
     testTimeout: 15_000,
     hookTimeout: 15_000
   }
