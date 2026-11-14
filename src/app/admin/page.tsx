@@ -1,5 +1,9 @@
-import { Building2, CheckCircle2, KeyRound, MailPlus, ShieldCheck, UsersRound } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, KeyRound, MailPlus, ShieldCheck, UsersRound } from "lucide-react";
 
+import { InviteMemberForm } from "@/app/admin/InviteMemberForm";
+import { InvitationControls } from "@/app/admin/InvitationControls";
+import { MemberControls } from "@/app/admin/MemberControls";
+import { hasPermission } from "@/auth/authorization";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +18,10 @@ const roleColors: Record<string, string> = {
 
 export default async function AdminPage() {
   const overview = await loadAdminOverview();
+  const canInvite = hasPermission(overview.permissions, "members.invite");
+  const canChangeRoles = hasPermission(overview.permissions, "members.role.assign");
+  const canDisable = hasPermission(overview.permissions, "members.disable");
+  const preview = overview.mode === "preview";
 
   return (
     <AppShell>
@@ -36,9 +44,11 @@ export default async function AdminPage() {
               {overview.tenant.locale} · {overview.tenant.timezone}
             </p>
           </div>
-          <Button disabled={overview.mode === "preview"}>
-            <MailPlus className="h-4 w-4" />
-            Mitarbeiter einladen
+          <Button asChild>
+            <a href="#einladung">
+              <MailPlus className="h-4 w-4" />
+              Mitarbeiter einladen
+            </a>
           </Button>
         </section>
 
@@ -78,6 +88,18 @@ export default async function AdminPage() {
           </Card>
         </section>
 
+        <Card id="einladung">
+          <CardHeader>
+            <CardTitle>Mitarbeiter einladen</CardTitle>
+            <CardDescription>
+              Der Einladungslink ist einmalig, wird nur gehasht gespeichert und läuft nach sieben Tagen ab.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InviteMemberForm roles={overview.roles} preview={preview || !canInvite} />
+          </CardContent>
+        </Card>
+
         <div className="grid gap-5 lg:grid-cols-[1.5fr_0.7fr]">
           <Card>
             <CardHeader>
@@ -107,6 +129,13 @@ export default async function AdminPage() {
                     <Badge className={roleColors[member.roleCode]}>{member.roleLabel}</Badge>
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-label="Aktiv" />
                   </div>
+                  <MemberControls
+                    membershipId={member.id}
+                    currentRole={member.roleCode}
+                    roles={overview.roles}
+                    canChangeRole={!preview && canChangeRoles}
+                    canDisable={!preview && canDisable}
+                  />
                 </div>
               ))}
             </CardContent>
@@ -128,12 +157,38 @@ export default async function AdminPage() {
             </Card>
             <Card>
               <CardHeader>
+                <CardTitle>Offene Einladungen</CardTitle>
+                <CardDescription>{overview.invitations.length} noch nicht angenommene Einladungen.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {overview.invitations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Keine offenen Einladungen.</p>
+                ) : (
+                  overview.invitations.map((invitation) => (
+                    <div key={invitation.id} className="rounded-lg border bg-secondary/30 p-3">
+                      <p className="truncate text-sm font-semibold">{invitation.email}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <Badge>{invitation.roleLabel}</Badge>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          bis {new Intl.DateTimeFormat("de-DE").format(new Date(invitation.expiresAt))}
+                        </span>
+                      </div>
+                      <InvitationControls invitationId={invitation.id} enabled={!preview && canInvite} />
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
                 <CardTitle>Nächster Ausbau</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Einladungen per E-Mail</p>
-                <p>Rollenwechsel mit Audit-Protokoll</p>
-                <p>Letzten Admin technisch schützen</p>
+                <p className="text-emerald-700">✓ Einladungen sicher vorbereiten</p>
+                <p className="text-emerald-700">✓ Rollenwechsel auditieren</p>
+                <p className="text-emerald-700">✓ Letzten Admin schützen</p>
+                <p>Als Nächstes: Annahme und E-Mail-Zustellung</p>
               </CardContent>
             </Card>
           </div>

@@ -1,20 +1,19 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { permissionCodes, type PermissionCode } from "@/auth/authorization";
 import { createSqlClient } from "@/db/client";
 import { resolveIdentity } from "@/db/identity-context";
-import { memberships, rolePermissions, roles, tenants, tenantSettings, users } from "@/db/schema";
+import { invitations, memberships, rolePermissions, roles, tenants, tenantSettings, users } from "@/db/schema";
 import { withTenantContext } from "@/db/tenant-context";
 import { previewAdminOverview } from "@/features/admin/preview-data";
 import type { AdminOverview } from "@/features/admin/types";
+import { activeTenantCookie } from "@/features/admin/constants";
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-
-export const activeTenantCookie = "hw_active_tenant";
 
 export async function loadAdminOverview(): Promise<AdminOverview> {
   const supabaseConfig = readSupabasePublicConfig();
@@ -79,6 +78,29 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
           .from(rolePermissions)
           .where(eq(rolePermissions.roleCode, context.roleCode));
 
+        const openInvitations = await database
+          .select({
+            id: invitations.id,
+            email: invitations.email,
+            roleCode: invitations.roleCode,
+            roleLabel: roles.label,
+            expiresAt: invitations.expiresAt
+          })
+          .from(invitations)
+          .innerJoin(roles, eq(roles.code, invitations.roleCode))
+          .where(
+            and(
+              eq(invitations.tenantId, context.tenantId),
+              isNull(invitations.acceptedAt),
+              isNull(invitations.revokedAt)
+            )
+          );
+
+        const availableRoles = await database
+          .select({ code: roles.code, label: roles.label })
+          .from(roles)
+          .where(eq(roles.isSystem, true));
+
         const [viewerRole] = await database
           .select({ label: roles.label })
           .from(roles)
@@ -91,6 +113,7 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
           mode: "live" as const,
           tenant,
           viewer: {
+            membershipId: context.membershipId,
             name: identity.displayName ?? identity.email,
             email: identity.email,
             roleCode: context.roleCode,
@@ -105,7 +128,12 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
           permissions: granted
             .map(({ code }) => code)
             .filter((code): code is PermissionCode => permissionCodes.includes(code as PermissionCode)),
-          members: memberRows.map((member) => ({ ...member, name: member.name ?? member.email }))
+          members: memberRows.map((member) => ({ ...member, name: member.name ?? member.email })),
+          invitations: openInvitations.map((invitation) => ({
+            ...invitation,
+            expiresAt: invitation.expiresAt.toISOString()
+          })),
+          roles: availableRoles
         };
       }
     );
