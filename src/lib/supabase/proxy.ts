@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 
-const protectedPrefixes = ["/admin", "/mfa"];
+const protectedPrefixes = ["/admin", "/mfa", "/invite", "/reset-password"];
 
 export async function updateAuthSession(request: NextRequest) {
   const config = readSupabasePublicConfig();
@@ -38,13 +38,13 @@ export async function updateAuthSession(request: NextRequest) {
   if (isProtected && !hasIdentity) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     const redirectResponse = NextResponse.redirect(loginUrl);
     response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
     return redirectResponse;
   }
 
-  if (request.nextUrl.pathname === "/login" && hasIdentity) {
+  if (request.nextUrl.pathname === "/login" && hasIdentity && !request.nextUrl.searchParams.has("next")) {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     adminUrl.search = "";

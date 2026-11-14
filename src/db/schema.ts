@@ -270,11 +270,27 @@ export const auditEvents = pgTable(
   ]
 ).enableRLS();
 
+export const rateLimitBuckets = pgTable(
+  "rate_limit_buckets",
+  {
+    scope: text("scope").notNull(),
+    keyHash: text("key_hash").notNull(),
+    windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull(),
+    requestCount: integer("request_count").notNull().default(1),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.scope, table.keyHash, table.windowStartedAt] }),
+    index("rate_limit_buckets_expires_at_idx").on(table.expiresAt)
+  ]
+);
+
 export const schema = {
   auditEvents,
   invitations,
   memberships,
   permissions,
+  rateLimitBuckets,
   rolePermissions,
   roles,
   tenantSettings,

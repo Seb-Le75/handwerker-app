@@ -7,8 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
   const authenticationEnabled = Boolean(readSupabasePublicConfig());
+  const query = await searchParams;
 
   return (
     <main className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-5 py-10 lg:grid-cols-[1.05fr_0.95fr]">
@@ -47,7 +52,12 @@ export default function LoginPage() {
           <CardDescription>Mit dem persönlichen Betriebszugang anmelden.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 px-7 pb-7">
-          <LoginForm enabled={authenticationEnabled} />
+          <LoginForm enabled={authenticationEnabled} next={query.next} />
+          {query.error === "link" ? (
+            <p role="alert" className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              Der Anmeldelink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen Link an.
+            </p>
+          ) : null}
           {!authenticationEnabled ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950">
               <p className="font-semibold">Lokale Entwicklungsvorschau</p>
@@ -64,6 +74,11 @@ export default function LoginPage() {
           ) : null}
           <p className="text-center text-xs text-muted-foreground">
             Kein öffentlicher Zugang. Neue Konten werden ausschließlich eingeladen.
+          </p>
+          <p className="text-center text-sm">
+            <Link className="font-medium text-primary hover:underline" href="/forgot-password">
+              Passwort vergessen?
+            </Link>
           </p>
         </CardContent>
       </Card>

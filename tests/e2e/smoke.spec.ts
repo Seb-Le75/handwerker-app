@@ -14,6 +14,10 @@ test("the local authentication and team preview are visible", async ({ page }) =
 
   await expect(page.getByRole("heading", { name: "Willkommen zurück" })).toBeVisible();
   await expect(page.getByText("Lokale Entwicklungsvorschau")).toBeVisible();
+  await page.getByRole("link", { name: "Passwort vergessen?" }).click();
+  await expect(page.getByRole("heading", { name: "Passwort zurücksetzen" })).toBeVisible();
+  await expect(page.getByText("In der lokalen Vorschau ist kein E-Mail-Versand verbunden.")).toBeVisible();
+  await page.getByRole("link", { name: "Zurück zur Anmeldung" }).click();
 
   await page.getByRole("link", { name: /Vorschau öffnen/ }).click();
   await expect(page.getByRole("heading", { name: "Hansen Sanitär & Heizung GmbH" })).toBeVisible();
