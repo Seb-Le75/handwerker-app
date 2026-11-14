@@ -23,4 +23,11 @@ test("the local authentication and team preview are visible", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Offene Einladungen" })).toBeVisible();
   await expect(page.getByText("lena.becker@beispiel.de")).toBeVisible();
   await expect(page.getByRole("button", { name: "Einladen" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aktiver Betrieb" })).toContainText("Nord Service GmbH");
+  await expect(page.getByRole("button", { name: "Betrieb wechseln" })).toBeDisabled();
+
+  await page.getByRole("link", { name: /Protokoll öffnen/ }).click();
+  await expect(page.getByRole("heading", { name: "Audit-Protokoll" })).toBeVisible();
+  await expect(page.getByText("Rolle geändert")).toBeVisible();
+  await expect(page.getByText("Audit-Vorschau mit Beispieldaten")).toBeVisible();
 });

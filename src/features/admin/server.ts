@@ -42,6 +42,20 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
     const assuranceLevel = typeof data.claims.aal === "string" ? data.claims.aal : "aal1";
     if (selectedMembership.roleCode === "owner_admin" && assuranceLevel !== "aal2") redirect("/mfa");
 
+    const tenantOptions = await Promise.all(
+      identity.memberships.map((membership) =>
+        withTenantContext(sqlClient, { tenantId: membership.tenantId, userId: identity.userId }, async (database) => {
+          const [tenant] = await database
+            .select({ name: tenants.legalName })
+            .from(tenants)
+            .where(eq(tenants.id, membership.tenantId))
+            .limit(1);
+          if (!tenant) throw new Error("A tenant membership references an unavailable tenant.");
+          return { id: membership.tenantId, name: tenant.name, roleCode: membership.roleCode };
+        })
+      )
+    );
+
     const overview = await withTenantContext(
       sqlClient,
       { tenantId: selectedMembership.tenantId, userId: identity.userId },
@@ -120,11 +134,7 @@ export async function loadAdminOverview(): Promise<AdminOverview> {
             roleLabel: viewerRole.label,
             assuranceLevel
           },
-          tenants: identity.memberships.map((membership) => ({
-            id: membership.tenantId,
-            name: membership.tenantId === tenant.id ? tenant.legalName : "Weiterer Betrieb",
-            roleCode: membership.roleCode
-          })),
+          tenants: tenantOptions,
           permissions: granted
             .map(({ code }) => code)
             .filter((code): code is PermissionCode => permissionCodes.includes(code as PermissionCode)),
