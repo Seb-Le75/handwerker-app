@@ -10,11 +10,12 @@ import { login, type LoginState } from "./actions";
 
 const initialState: LoginState = { message: "" };
 
-export function LoginForm({ enabled }: { enabled: boolean }) {
+export function LoginForm({ enabled, next }: { enabled: boolean; next?: string }) {
   const [state, action, pending] = useActionState(login, initialState);
 
   return (
     <form action={action} className="space-y-5">
+      <input type="hidden" name="next" value={next ?? ""} />
       <div className="space-y-2">
         <Label htmlFor="email">E-Mail-Adresse</Label>
         <Input id="email" name="email" type="email" autoComplete="email" required disabled={!enabled} />

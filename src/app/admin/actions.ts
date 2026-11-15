@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { withAuthenticatedTenant } from "@/features/admin/authenticated-context";
 import { activeTenantCookie } from "@/features/admin/constants";
+import { deliverInvitation } from "@/features/admin/invitation-delivery";
 import {
   assignableRoleCodes,
   changeMemberRole,
@@ -16,6 +17,8 @@ import {
   revokeInvitation
 } from "@/features/admin/member-service";
 import { switchActiveTenant } from "@/features/admin/tenant-switch-service";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { createAdminClient, readApplicationUrl } from "@/lib/supabase/admin";
 
 export type AdminActionState = Readonly<{
   status: "idle" | "success" | "error";
@@ -36,9 +39,36 @@ export async function inviteMember(_state: AdminActionState, formData: FormData)
   if (!parsed.success) return { status: "error", message: "Bitte E-Mail-Adresse und Rolle prüfen." };
 
   try {
-    await withAuthenticatedTenant((database, context) => createInvitation(database, context, parsed.data));
+    // Fail before persisting an invitation when the trusted delivery channel is absent.
+    readApplicationUrl();
+    createAdminClient();
+    const invitation = await withAuthenticatedTenant(async (database, context) => {
+      const allowed = await consumeRateLimit({
+        scope: "member_invite_actor",
+        identifier: `${context.tenantId}:${context.membershipId}`,
+        limit: 10,
+        windowSeconds: 3600
+      });
+      if (!allowed) throw new MemberManagementError("Zu viele Einladungen. Bitte später erneut versuchen.", "conflict");
+      const created = await createInvitation(database, context, parsed.data);
+      return { ...created, tenantId: context.tenantId };
+    });
+
+    try {
+      await deliverInvitation({
+        email: parsed.data.email,
+        token: invitation.token,
+        tenantId: invitation.tenantId,
+        invitationId: invitation.invitationId
+      });
+    } catch {
+      await withAuthenticatedTenant((database, context) =>
+        revokeInvitation(database, context, invitation.invitationId)
+      );
+      return { status: "error", message: "Die Einladung konnte nicht zugestellt werden und wurde verworfen." };
+    }
     revalidatePath("/admin");
-    return { status: "success", message: "Einladung wurde sicher vorbereitet." };
+    return { status: "success", message: "Die Einladung wurde per E-Mail versendet." };
   } catch (error) {
     return actionError(error);
   }
