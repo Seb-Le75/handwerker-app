@@ -4,6 +4,7 @@ import type {
   Job,
   MaintenanceCheckItem,
   MaterialCatalogItem,
+  PaymentSettings,
   ToolCatalogItem
 } from "@/types";
 
@@ -67,7 +68,7 @@ export const mockJobs: Job[] = [
     id: "job-24001",
     customerId: "cust-1001",
     type: "Wartung",
-    description: "Jahreswartung Gastherme inklusive Sichtpruefung und Funktionskontrolle.",
+    description: "Jahreswartung Gastherme inklusive Sichtprüfung und Funktionskontrolle.",
     scheduledDate: today,
     scheduledStartTime: "09:00",
     startTime: "09:00",
@@ -77,8 +78,8 @@ export const mockJobs: Job[] = [
     travelCostCategory: "1",
     vehicleSetupCostCategory: "1",
     maintenanceChecks: [
-      { id: "maint-001", designation: "Sichtpruefung der Anlage" },
-      { id: "maint-002", designation: "Dichtheitspruefung" }
+      { id: "maint-001", designation: "Sichtprüfung der Anlage" },
+      { id: "maint-002", designation: "Dichtheitsprüfung" }
     ],
     materials: [
       {
@@ -123,7 +124,7 @@ export const mockJobs: Job[] = [
     id: "job-24002",
     customerId: "cust-1002",
     type: "Notdienst",
-    description: "Undichtigkeit am Eckventil im Gaeste-WC.",
+    description: "Undichtigkeit am Eckventil im Gäste-WC.",
     scheduledDate: today,
     scheduledStartTime: "13:30",
     startTime: "18:15",
@@ -159,7 +160,7 @@ export const mockJobs: Job[] = [
       serviceCompleted: false,
       systemFunctional: false,
       repairNotPossible: true,
-      repairNotPossibleReason: "Ersatzteil nicht vor Ort verfuegbar, Nachtermin erforderlich.",
+      repairNotPossibleReason: "Ersatzteil nicht vor Ort verfügbar, Nachtermin erforderlich.",
       customerConfirmed: false
     },
     createdAt: "2026-05-29T18:15:00.000Z"
@@ -171,9 +172,9 @@ export const jobTypes = ["Reparatur", "Notdienst", "Wartung", "Angebot", "Instal
 const materialSeed: MaterialCatalogItem[] = [
   { id: "mat-001", designation: "Siphon 1 1/4 Zoll", unit: "Stück", unitPrice: 18.9 },
   { id: "mat-002", designation: "Eckventil verchromt", unit: "Stück", unitPrice: 12.5 },
-  { id: "mat-003", designation: "Kupferrohr 15 mm", unit: "Länge", unitPrice: 7.8 },
+  { id: "mat-003", designation: "Kupferrohr 15 mm", unit: "m", unitPrice: 7.8 },
   { id: "mat-004", designation: "Dichtungssatz", unit: "Stück", unitPrice: 6.4 },
-  { id: "mat-005", designation: "Heizungswasser Zusatz", unit: "Menge", unitPrice: 14.2 }
+  { id: "mat-005", designation: "Heizungswasser-Zusatz", unit: "l", unitPrice: 14.2 }
 ];
 
 export const mockMaterials: MaterialCatalogItem[] = [
@@ -189,9 +190,9 @@ export const mockMaterials: MaterialCatalogItem[] = [
 const toolSeed: ToolCatalogItem[] = [
   { id: "tool-001", designation: "Presswerkzeug", costRate: 22 },
   { id: "tool-002", designation: "Rohrreinigungsmaschine", costRate: 45 },
-  { id: "tool-003", designation: "Kernbohrgeraet", costRate: 65 },
-  { id: "tool-004", designation: "Leckageortungsgeraet", costRate: 38 },
-  { id: "tool-005", designation: "Abdrueckpumpe", costRate: 18 }
+  { id: "tool-003", designation: "Kernbohrgerät", costRate: 65 },
+  { id: "tool-004", designation: "Leckageortungsgerät", costRate: 38 },
+  { id: "tool-005", designation: "Abdrückpumpe", costRate: 18 }
 ];
 
 export const mockTools: ToolCatalogItem[] = [
@@ -210,14 +211,90 @@ export const mockEmergencySurcharges: EmergencySurcharge[] = [
 ];
 
 export const mockMaintenanceChecks: MaintenanceCheckItem[] = [
-  { id: "maint-001", designation: "Sichtpruefung der Anlage" },
-  { id: "maint-002", designation: "Dichtheitspruefung" },
-  { id: "maint-003", designation: "Funktionspruefung Sicherheitsventil" },
-  { id: "maint-004", designation: "Anlagendruck pruefen" },
-  { id: "maint-005", designation: "Filter reinigen" },
-  { id: "maint-006", designation: "Brenner/Heizelement pruefen" },
-  { id: "maint-007", designation: "Abgaswerte kontrollieren" },
-  { id: "maint-008", designation: "Pumpenlauf pruefen" },
-  { id: "maint-009", designation: "Regelung und Thermostat pruefen" },
-  { id: "maint-010", designation: "Wartungsprotokoll abschliessen" }
+  {
+    id: "maint-001",
+    designation: "Sichtprüfung der Anlage",
+    durationMinutes: 15,
+    flatRate: 18,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-002",
+    designation: "Dichtheitsprüfung",
+    durationMinutes: 20,
+    flatRate: 28,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-003",
+    designation: "Funktionsprüfung Sicherheitsventil",
+    durationMinutes: 15,
+    flatRate: 22,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-004",
+    designation: "Anlagendruck prüfen",
+    durationMinutes: 10,
+    flatRate: 12,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-005",
+    designation: "Filter reinigen",
+    durationMinutes: 20,
+    flatRate: 25,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-006",
+    designation: "Brenner/Heizelement prüfen",
+    durationMinutes: 25,
+    flatRate: 35,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-007",
+    designation: "Abgaswerte kontrollieren",
+    durationMinutes: 20,
+    flatRate: 30,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-008",
+    designation: "Pumpenlauf prüfen",
+    durationMinutes: 10,
+    flatRate: 15,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-009",
+    designation: "Regelung und Thermostat prüfen",
+    durationMinutes: 15,
+    flatRate: 20,
+    travelFlatRate: 0,
+    materials: []
+  },
+  {
+    id: "maint-010",
+    designation: "Wartungsprotokoll abschließen",
+    durationMinutes: 10,
+    flatRate: 10,
+    travelFlatRate: 0,
+    materials: []
+  }
 ];
+
+export const mockPaymentSettings: PaymentSettings = {
+  paypalEnabled: false,
+  paypalMe: "",
+  paypalDiscountPercent: 3
+};

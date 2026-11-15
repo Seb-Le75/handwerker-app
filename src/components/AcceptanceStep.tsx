@@ -3,6 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SignaturePad } from "@/components/SignaturePad";
 import type { Acceptance } from "@/types";
 
 type AcceptanceStepProps = {
@@ -26,7 +27,7 @@ export function AcceptanceStep({ value, onChange }: AcceptanceStepProps) {
             checked={value.systemFunctional === true}
             onCheckedChange={(checked) => onChange({ ...value, systemFunctional: checked === true })}
           />
-          <span className="text-base">Anlage funktionsfaehig</span>
+          <span className="text-base">Anlage funktionsfähig</span>
         </Label>
       </div>
 
@@ -51,7 +52,7 @@ export function AcceptanceStep({ value, onChange }: AcceptanceStepProps) {
               id="repairNotPossibleReason"
               value={value.repairNotPossibleReason ?? ""}
               onChange={(event) => onChange({ ...value, repairNotPossibleReason: event.target.value })}
-              placeholder="Warum war eine Reparatur nicht moeglich?"
+              placeholder="Warum war eine Reparatur nicht möglich?"
             />
           </div>
         )}
@@ -63,13 +64,19 @@ export function AcceptanceStep({ value, onChange }: AcceptanceStepProps) {
           onCheckedChange={(checked) => onChange({ ...value, customerConfirmed: checked === true })}
         />
         <span className="grid gap-1">
-          <span className="text-base">Kunde bestaetigt die Abnahme</span>
+          <span className="text-base">Kunde bestätigt die Abnahme</span>
           <span className="text-sm font-normal text-muted-foreground">
-            Die Angaben zur Leistung, Funktion und gegebenenfalls zur nicht moeglichen Reparatur wurden mit dem Kunden
+            Die Angaben zur Leistung, Funktion und gegebenenfalls zur nicht möglichen Reparatur wurden mit dem Kunden
             besprochen.
           </span>
         </span>
       </Label>
+
+      <SignaturePad
+        title="Unterschrift zur Auftragsabnahme"
+        value={value.signatureDataUrl ?? ""}
+        onChange={(signatureDataUrl) => onChange({ ...value, signatureDataUrl })}
+      />
     </div>
   );
 }

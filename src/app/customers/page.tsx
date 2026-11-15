@@ -107,7 +107,7 @@ export default function CustomersPage() {
                     <span>{customer.email || "Keine E-Mail hinterlegt"}</span>
                   </div>
                   <div className="mt-3">
-                    <Badge>{jobsByCustomer[customer.id]?.length ?? 0} Auftraege</Badge>
+                    <Badge>{jobsByCustomer[customer.id]?.length ?? 0} Aufträge</Badge>
                     {customer.archived && (
                       <span className="ml-2 inline-flex items-center gap-2">
                         <Badge>Archiviert</Badge>

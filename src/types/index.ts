@@ -23,7 +23,7 @@ export type JobType = "Reparatur" | "Notdienst" | "Wartung" | "Angebot" | "Insta
 export type JobStatus = "Entwurf" | "Offen" | "Abgeschlossen" | "Abgebrochen";
 export type TechnicianRole = "Lehrling" | "Geselle" | "Meister";
 export type CostCategory = "1" | "2" | "3";
-export type MaterialUnit = "Stück" | "Menge" | "Länge";
+export type MaterialUnit = "Stück" | "m" | "cm" | "m²" | "m³" | "ml" | "l" | "kg" | "g" | "Pauschal";
 
 export type LegalConsent = {
   privacyReceived: boolean;
@@ -40,6 +40,7 @@ export type Acceptance = {
   repairNotPossible?: boolean;
   repairNotPossibleReason?: string;
   customerConfirmed?: boolean;
+  signatureDataUrl?: string;
 };
 
 export type UploadedPhoto = {
@@ -70,11 +71,23 @@ export type EmergencySurcharge = {
 export type MaintenanceCheckItem = {
   id: string;
   designation: string;
+  durationMinutes?: number;
+  flatRate?: number;
+  travelFlatRate?: number;
+  materials?: MaintenanceMaterialDefault[];
 };
 
-export type JobMaintenanceCheck = {
-  id: string;
-  designation: string;
+export type MaintenanceMaterialDefault = {
+  materialId: string;
+  quantity: number;
+};
+
+export type JobMaintenanceCheck = MaintenanceCheckItem;
+
+export type PaymentSettings = {
+  paypalEnabled: boolean;
+  paypalMe: string;
+  paypalDiscountPercent: number;
 };
 
 export type JobMaterialLine = {
@@ -84,6 +97,7 @@ export type JobMaterialLine = {
   materialId: string;
   materialName: string;
   unitPrice: number;
+  sourceMaintenanceId?: string;
 };
 
 export type JobToolLine = {

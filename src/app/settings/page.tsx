@@ -1,21 +1,39 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DecimalInput } from "@/components/DecimalInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { mockEmergencySurcharges, mockMaintenanceChecks, mockMaterials, mockTools } from "@/data/mock";
+import { Label } from "@/components/ui/label";
+import {
+  mockEmergencySurcharges,
+  mockMaintenanceChecks,
+  mockMaterials,
+  mockPaymentSettings,
+  mockTools
+} from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { createId } from "@/lib/utils";
-import type { EmergencySurcharge, MaintenanceCheckItem, MaterialCatalogItem, MaterialUnit, ToolCatalogItem } from "@/types";
-
-const materialUnits: MaterialUnit[] = ["Stück", "Menge", "Länge"];
+import { materialUnits, normalizeMaterialUnit } from "@/lib/materials";
+import type {
+  EmergencySurcharge,
+  MaintenanceCheckItem,
+  MaterialCatalogItem,
+  MaterialUnit,
+  PaymentSettings,
+  ToolCatalogItem
+} from "@/types";
 
 export default function SettingsPage() {
-  const [materials, setMaterials] = useLocalStorage<MaterialCatalogItem[]>("hsa-materials", mockMaterials);
+  const [materials, setMaterials, materialsHydrated] = useLocalStorage<MaterialCatalogItem[]>(
+    "hsa-materials",
+    mockMaterials
+  );
   const [tools, setTools] = useLocalStorage<ToolCatalogItem[]>("hsa-tools", mockTools);
   const [emergencySurcharges, setEmergencySurcharges] = useLocalStorage<EmergencySurcharge[]>(
     "hsa-emergency-surcharges",
@@ -25,10 +43,20 @@ export default function SettingsPage() {
     "hsa-maintenance-checks",
     mockMaintenanceChecks
   );
+  const [paymentSettings, setPaymentSettings] = useLocalStorage<PaymentSettings>(
+    "hsa-payment-settings",
+    mockPaymentSettings
+  );
   const [focusMaterialId, setFocusMaterialId] = useState("");
   const [focusToolId, setFocusToolId] = useState("");
   const materialRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const toolRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    if (!materialsHydrated) return;
+    const normalized = materials.map((material) => ({ ...material, unit: normalizeMaterialUnit(material.unit) }));
+    if (normalized.some((material, index) => material.unit !== materials[index]?.unit)) setMaterials(normalized);
+  }, [materials, materialsHydrated, setMaterials]);
 
   useEffect(() => {
     if (!focusMaterialId) {
@@ -95,6 +123,61 @@ export default function SettingsPage() {
     setMaintenanceChecks(maintenanceChecks.map((check) => (check.id === id ? { ...check, ...next } : check)));
   }
 
+  function addMaintenanceCheck() {
+    setMaintenanceChecks([
+      ...maintenanceChecks,
+      {
+        id: createId("maintenance"),
+        designation: "Neue Regelprüfung",
+        durationMinutes: 30,
+        flatRate: 0,
+        travelFlatRate: 0,
+        materials: []
+      }
+    ]);
+  }
+
+  function addMaintenanceMaterial(checkId: string) {
+    const firstMaterial = materials.find((material) => material.designation.trim());
+    if (!firstMaterial) return;
+    setMaintenanceChecks(
+      maintenanceChecks.map((check) =>
+        check.id === checkId
+          ? { ...check, materials: [...(check.materials ?? []), { materialId: firstMaterial.id, quantity: 1 }] }
+          : check
+      )
+    );
+  }
+
+  function updateMaintenanceMaterial(
+    checkId: string,
+    index: number,
+    next: Partial<{ materialId: string; quantity: number }>
+  ) {
+    setMaintenanceChecks(
+      maintenanceChecks.map((check) =>
+        check.id === checkId
+          ? {
+              ...check,
+              materials: (check.materials ?? []).map((material, materialIndex) =>
+                materialIndex === index ? { ...material, ...next } : material
+              )
+            }
+          : check
+      )
+    );
+  }
+
+  function removeMaintenanceMaterial(checkId: string, index: number) {
+    setMaintenanceChecks(
+      maintenanceChecks.map((check) =>
+        check.id === checkId
+          ? { ...check, materials: (check.materials ?? []).filter((_, materialIndex) => materialIndex !== index) }
+          : check
+      )
+    );
+  }
+
   return (
     <AppShell>
       <div className="grid gap-5">
@@ -107,12 +190,14 @@ export default function SettingsPage() {
             <CardContent className="grid gap-3 text-sm">
               <div className="rounded-lg bg-secondary/70 p-4">
                 <span className="block font-semibold">SHK Meisterbetrieb</span>
-                <span className="mt-1 block text-muted-foreground">Standardprofil fuer Angebote, Wartung und Notdienst.</span>
+                <span className="mt-1 block text-muted-foreground">
+                  Standardprofil für Angebote, Wartung und Notdienst.
+                </span>
               </div>
               <div className="rounded-lg bg-secondary/70 p-4">
                 <span className="block font-semibold">Speicherung</span>
                 <span className="mt-1 block text-muted-foreground">
-                  Kunden, Auftraege und Materialpreise liegen im localStorage dieses Geraets.
+                  Kunden, Aufträge und Materialpreise liegen im localStorage dieses Geräts.
                 </span>
               </div>
             </CardContent>
@@ -123,7 +208,7 @@ export default function SettingsPage() {
               <CardDescription>Erfasste Pflichtbestandteile</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm">
-              {["Datenschutzerklaerung", "Widerrufsbelehrung", "Auftragsbestaetigung", "Abnahmeprotokoll"].map((item) => (
+              {["Datenschutzerklärung", "Widerrufsbelehrung", "Auftragsbestätigung", "Abnahmeprotokoll"].map((item) => (
                 <div key={item} className="rounded-lg border bg-white p-4 font-medium shadow-sm">
                   {item}
                 </div>
@@ -132,15 +217,64 @@ export default function SettingsPage() {
           </Card>
         </div>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Direktzahlung</CardTitle>
+            <CardDescription>
+              PayPal-Zahlung mit optionalem Sofortrabatt in der Abschlussübersicht anbieten
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-lg border bg-white p-4">
+              <Checkbox
+                checked={paymentSettings.paypalEnabled}
+                onCheckedChange={(checked) =>
+                  setPaymentSettings({ ...paymentSettings, paypalEnabled: checked === true })
+                }
+              />
+              PayPal-Direktzahlung anbieten
+            </Label>
+            <div className="grid gap-4 md:grid-cols-[1fr_12rem]">
+              <div className="space-y-2">
+                <Label htmlFor="paypalMe">PayPal.Me-Name oder vollständiger Link</Label>
+                <Input
+                  id="paypalMe"
+                  value={paymentSettings.paypalMe}
+                  onChange={(event) => setPaymentSettings({ ...paymentSettings, paypalMe: event.target.value })}
+                  placeholder="meinbetrieb oder https://paypal.me/meinbetrieb"
+                />
+              </div>
+              <div className="space-y-2">
+                <span className="block text-sm font-medium">Sofortrabatt in %</span>
+                <DecimalInput
+                  ariaLabel="PayPal-Sofortrabatt in Prozent"
+                  value={paymentSettings.paypalDiscountPercent}
+                  maximumFractionDigits={2}
+                  onChange={(paypalDiscountPercent) =>
+                    setPaymentSettings({ ...paymentSettings, paypalDiscountPercent })
+                  }
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Die Vorschau öffnet PayPal.Me mit dem rabattierten Betrag. Eine automatische Zahlungsbestätigung ist erst
+              mit einer serverseitigen PayPal-Anbindung möglich.
+            </p>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-5 xl:grid-cols-[0.75fr_1.25fr]">
           <Card>
             <CardHeader>
               <CardTitle>Notdienst-Zulagen</CardTitle>
-              <CardDescription>Aufschlaege fuer Notdienst-Auftraege</CardDescription>
+              <CardDescription>Aufschläge für Notdienst-Aufträge</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
               {emergencySurcharges.map((surcharge) => (
-                <div key={surcharge.id} className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm md:grid-cols-[1fr_9rem]">
+                <div
+                  key={surcharge.id}
+                  className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm md:grid-cols-[1fr_9rem]"
+                >
                   <Input
                     value={surcharge.label}
                     onChange={(event) => updateEmergencySurcharge(surcharge.id, { label: event.target.value })}
@@ -151,7 +285,9 @@ export default function SettingsPage() {
                     min="0"
                     step="1"
                     value={surcharge.percent}
-                    onChange={(event) => updateEmergencySurcharge(surcharge.id, { percent: Number(event.target.value) })}
+                    onChange={(event) =>
+                      updateEmergencySurcharge(surcharge.id, { percent: Number(event.target.value) })
+                    }
                     placeholder="Prozent"
                   />
                 </div>
@@ -161,26 +297,113 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Regelpruefungen / Wartungen</CardTitle>
-              <CardDescription>Vorauswahl fuer Wartungsauftraege im Materialschritt</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border bg-white">
-                <div className="grid grid-cols-[4rem_1fr] gap-3 border-b bg-secondary/70 px-4 py-3 text-sm font-semibold">
-                  <span>Nr.</span>
-                  <span>Bezeichnung</span>
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <CardTitle>Regelprüfungen / Wartungen</CardTitle>
+                  <CardDescription>Dauer, Pauschalen und benötigte Materialien vorbelegen</CardDescription>
                 </div>
-                {maintenanceChecks.map((check, index) => (
-                  <div key={check.id} className="grid grid-cols-[4rem_1fr] gap-3 border-b px-4 py-3 last:border-b-0">
-                    <span className="flex min-h-12 items-center text-sm font-medium text-muted-foreground">{index + 1}</span>
+                <Button type="button" variant="outline" onClick={addMaintenanceCheck}>
+                  <Plus className="h-4 w-4" /> Neue Regelprüfung
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              {maintenanceChecks.map((check, index) => (
+                <div key={check.id} className="grid gap-4 rounded-lg border bg-white p-4 shadow-sm">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor={`maintenance-name-${check.id}`}>
+                      {index + 1}. Bezeichnung
+                    </label>
                     <Input
+                      id={`maintenance-name-${check.id}`}
                       value={check.designation}
                       onChange={(event) => updateMaintenanceCheck(check.id, { designation: event.target.value })}
-                      placeholder="Regelpruefung oder Wartung"
+                      placeholder="Regelprüfung oder Wartung"
                     />
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <span className="block text-sm font-medium">Dauer in Minuten</span>
+                      <DecimalInput
+                        ariaLabel={`Dauer für ${check.designation}`}
+                        value={check.durationMinutes ?? 0}
+                        maximumFractionDigits={0}
+                        onChange={(durationMinutes) => updateMaintenanceCheck(check.id, { durationMinutes })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="block text-sm font-medium">Leistungspauschale €</span>
+                      <DecimalInput
+                        ariaLabel={`Leistungspauschale für ${check.designation}`}
+                        value={check.flatRate ?? 0}
+                        maximumFractionDigits={2}
+                        onChange={(flatRate) => updateMaintenanceCheck(check.id, { flatRate })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="block text-sm font-medium">Fahrtspauschale €</span>
+                      <DecimalInput
+                        ariaLabel={`Fahrtspauschale für ${check.designation}`}
+                        value={check.travelFlatRate ?? 0}
+                        maximumFractionDigits={2}
+                        onChange={(travelFlatRate) => updateMaintenanceCheck(check.id, { travelFlatRate })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold">Materialvorbelegung</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addMaintenanceMaterial(check.id)}
+                      >
+                        <Plus className="h-4 w-4" /> Material
+                      </Button>
+                    </div>
+                    {(check.materials ?? []).map((materialDefault, materialIndex) => (
+                      <div
+                        key={`${check.id}-${materialIndex}`}
+                        className="grid grid-cols-[minmax(0,1fr)_7rem_3rem] gap-2"
+                      >
+                        <select
+                          aria-label={`Material ${materialIndex + 1} für ${check.designation}`}
+                          className="min-h-12 min-w-0 rounded-md border border-input bg-background px-3 text-base shadow-sm"
+                          value={materialDefault.materialId}
+                          onChange={(event) =>
+                            updateMaintenanceMaterial(check.id, materialIndex, { materialId: event.target.value })
+                          }
+                        >
+                          {materials
+                            .filter((material) => material.designation.trim())
+                            .map((material) => (
+                              <option key={material.id} value={material.id}>
+                                {material.designation} ({material.unit})
+                              </option>
+                            ))}
+                        </select>
+                        <DecimalInput
+                          ariaLabel={`Materialmenge ${materialIndex + 1} für ${check.designation}`}
+                          value={materialDefault.quantity}
+                          onChange={(quantity) => updateMaintenanceMaterial(check.id, materialIndex, { quantity })}
+                        />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          aria-label="Materialvorbelegung entfernen"
+                          onClick={() => removeMaintenanceMaterial(check.id, materialIndex)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -199,52 +422,55 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-[760px] rounded-lg border bg-white">
-                <div className="grid grid-cols-[4rem_1fr_10rem_12rem] gap-3 border-b bg-secondary/70 px-4 py-3 text-sm font-semibold">
-                  <span>Nr.</span>
-                  <span>Bezeichnung</span>
-                  <span>Einheit</span>
-                  <span>Preis</span>
-                </div>
-                <div className="grid">
-                  {materials.map((material, index) => (
-                    <div
-                      key={material.id}
-                      className="grid grid-cols-[4rem_1fr_10rem_12rem] gap-3 border-b px-4 py-3 last:border-b-0"
+            <div className="grid gap-3">
+              {materials.map((material, index) => (
+                <div
+                  key={material.id}
+                  className="grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-[3rem_1fr_9rem_12rem] md:items-end"
+                >
+                  <span className="text-sm font-medium text-muted-foreground md:pb-3">{index + 1}</span>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor={`material-name-${material.id}`}>
+                      Bezeichnung
+                    </label>
+                    <Input
+                      id={`material-name-${material.id}`}
+                      ref={(element) => {
+                        materialRefs.current[material.id] = element;
+                      }}
+                      value={material.designation}
+                      onChange={(event) => updateMaterial(material.id, { designation: event.target.value })}
+                      placeholder="Materialbezeichnung"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor={`material-unit-${material.id}`}>
+                      Einheit
+                    </label>
+                    <select
+                      id={`material-unit-${material.id}`}
+                      className="min-h-12 w-full rounded-md border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={material.unit}
+                      onChange={(event) => updateMaterial(material.id, { unit: event.target.value as MaterialUnit })}
                     >
-                      <span className="flex min-h-12 items-center text-sm font-medium text-muted-foreground">{index + 1}</span>
-                      <Input
-                        ref={(element) => {
-                          materialRefs.current[material.id] = element;
-                        }}
-                        value={material.designation}
-                        onChange={(event) => updateMaterial(material.id, { designation: event.target.value })}
-                        placeholder="Materialbezeichnung"
-                      />
-                      <select
-                        className="min-h-12 rounded-md border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={material.unit}
-                        onChange={(event) => updateMaterial(material.id, { unit: event.target.value as MaterialUnit })}
-                      >
-                        {materialUnits.map((unit) => (
-                          <option key={unit} value={unit}>
-                            {unit}
-                          </option>
-                        ))}
-                      </select>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={material.unitPrice}
-                        onChange={(event) => updateMaterial(material.id, { unitPrice: Number(event.target.value) })}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  ))}
+                      {materialUnits.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="block text-sm font-medium">Preis je Einheit</span>
+                    <DecimalInput
+                      ariaLabel={`Preis für Material ${index + 1}`}
+                      value={material.unitPrice}
+                      maximumFractionDigits={2}
+                      onChange={(unitPrice) => updateMaterial(material.id, { unitPrice })}
+                    />
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -253,7 +479,7 @@ export default function SettingsPage() {
           <CardHeader>
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <CardTitle>Geraete und Werkzeug</CardTitle>
+                <CardTitle>Geräte und Werkzeug</CardTitle>
                 <CardDescription>Anzahl im Auftrag, Bezeichnung und Kostensatz je Werkzeug definieren</CardDescription>
               </div>
               <Button type="button" onClick={addToolRow}>
@@ -272,8 +498,13 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid">
                   {tools.map((tool, index) => (
-                    <div key={tool.id} className="grid grid-cols-[4rem_1fr_12rem] gap-3 border-b px-4 py-3 last:border-b-0">
-                      <span className="flex min-h-12 items-center text-sm font-medium text-muted-foreground">{index + 1}</span>
+                    <div
+                      key={tool.id}
+                      className="grid grid-cols-[4rem_1fr_12rem] gap-3 border-b px-4 py-3 last:border-b-0"
+                    >
+                      <span className="flex min-h-12 items-center text-sm font-medium text-muted-foreground">
+                        {index + 1}
+                      </span>
                       <Input
                         ref={(element) => {
                           toolRefs.current[tool.id] = element;

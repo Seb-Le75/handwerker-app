@@ -94,9 +94,9 @@ export default function JobsPage() {
                       <span>Werkzeug: {toolLines.length > 0 ? formatCurrency(toolSum) : "nicht erfasst"}</span>
                       <span>Fotos: {job.photos.length}</span>
                       <span>
-                        Abnahme: {job.acceptance.customerConfirmed === true ? "vom Kunden bestaetigt" : "offen"}
+                        Abnahme: {job.acceptance.customerConfirmed === true ? "vom Kunden bestätigt" : "offen"}
                       </span>
-                      {job.acceptance.repairNotPossible === true && <span>Reparatur: nicht moeglich</span>}
+                      {job.acceptance.repairNotPossible === true && <span>Reparatur: nicht möglich</span>}
                     </div>
                   </CardContent>
                 </Card>

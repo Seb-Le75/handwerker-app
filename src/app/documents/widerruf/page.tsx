@@ -7,21 +7,23 @@ export default function WiderrufPage() {
       <Card>
         <CardHeader>
           <CardTitle>Widerrufsbelehrung</CardTitle>
-          <CardDescription>Hinweis fuer Verbraucher bei ausserhalb von Geschaeftsraeumen beauftragten Leistungen</CardDescription>
+          <CardDescription>
+            Hinweis für Verbraucher bei außerhalb von Geschäftsräumen beauftragten Leistungen
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm leading-6 text-muted-foreground">
           <p>
-            Verbraucher haben grundsaetzlich das Recht, einen ausserhalb von Geschaeftsraeumen geschlossenen Vertrag
+            Verbraucher haben grundsätzlich das Recht, einen außerhalb von Geschäftsräumen geschlossenen Vertrag
             innerhalb der gesetzlichen Frist zu widerrufen. Die Frist beginnt nach Erhalt der Belehrung.
           </p>
           <p>
-            Der Widerruf kann durch eine eindeutige Erklaerung gegenueber dem Betrieb erfolgen. Bereits erbrachte
-            Leistungen koennen anteilig zu verguten sein, wenn der Kunde den Beginn der Arbeiten vor Ablauf der
-            Widerrufsfrist ausdruecklich verlangt hat.
+            Der Widerruf kann durch eine eindeutige Erklärung gegenüber dem Betrieb erfolgen. Bereits erbrachte
+            Leistungen können anteilig zu vergüten sein, wenn der Kunde den Beginn der Arbeiten vor Ablauf der
+            Widerrufsfrist ausdrücklich verlangt hat.
           </p>
           <p>
-            Diese MVP-Fassung dient als digitale Dokumentation der Belehrung und sollte vor produktiver Nutzung rechtlich
-            geprueft und betriebsspezifisch angepasst werden.
+            Diese MVP-Fassung dient als digitale Dokumentation der Belehrung und sollte vor produktiver Nutzung
+            rechtlich geprüft und betriebsspezifisch angepasst werden.
           </p>
         </CardContent>
       </Card>

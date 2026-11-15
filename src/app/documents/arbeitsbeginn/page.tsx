@@ -7,7 +7,7 @@ export default function ArbeitsbeginnPage() {
       <Card>
         <CardHeader>
           <CardTitle>Zustimmung zum Arbeitsbeginn</CardTitle>
-          <CardDescription>Bestaetigung fuer sofortige Leistungserbringung vor Ort</CardDescription>
+          <CardDescription>Bestätigung für sofortige Leistungserbringung vor Ort</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm leading-6 text-muted-foreground">
           <p>
@@ -15,8 +15,8 @@ export default function ArbeitsbeginnPage() {
             insbesondere Notdienst-, Reparatur-, Wartungs- und Installationsarbeiten am Einsatzort.
           </p>
           <p>
-            Der Kunde bestaetigt, dass Datenschutzinformation und Widerrufsbelehrung bereitgestellt wurden und dass die
-            Leistung vor Ablauf einer moeglichen Widerrufsfrist starten darf.
+            Der Kunde bestätigt, dass Datenschutzinformation und Widerrufsbelehrung bereitgestellt wurden und dass die
+            Leistung vor Ablauf einer möglichen Widerrufsfrist starten darf.
           </p>
           <p>
             Die Zustimmung wird im Auftrag dokumentiert und zusammen mit den weiteren Einsatzdaten lokal gespeichert.
