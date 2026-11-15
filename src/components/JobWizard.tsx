@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, OctagonX, Plus, Save, SkipForward } from "lucide-react";
 
 import { AcceptanceStep } from "@/components/AcceptanceStep";
@@ -27,6 +27,7 @@ import {
 } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { createId, formatCustomerName, formatAddress } from "@/lib/utils";
+import { localDateKey } from "@/lib/jobs";
 import type {
   CostCategory,
   Customer,
@@ -45,13 +46,13 @@ const steps = [
   "Kunde",
   "Einsatzart",
   "Rechtliches",
-  "Auftragsdetails",
+  "Termin & Auftrag",
   "Arbeitszeiten",
   "Material",
   "Abnahme",
   "Uebersicht"
 ];
-const requiredSteps = new Set([0, 1, 2]);
+const requiredSteps = new Set([0, 1, 2, 3]);
 const technicianRoles: TechnicianRole[] = ["Lehrling", "Geselle", "Meister"];
 const costCategories: Array<{ value: CostCategory; label: string; amount?: string }> = [
   { value: "1", label: "Kategorie 1", amount: "15 EUR" },
@@ -63,6 +64,8 @@ const initialDraft: JobDraft = {
   customerId: "",
   type: "Reparatur",
   description: "",
+  scheduledDate: localDateKey(),
+  scheduledStartTime: "08:00",
   notes: "",
   startTime: "",
   endTime: "",
@@ -109,11 +112,19 @@ const initialDraft: JobDraft = {
   }
 };
 
-export function JobWizard() {
+export function JobWizard({
+  initialCustomerId,
+  editJobId,
+  initialStep
+}: {
+  initialCustomerId?: string;
+  editJobId?: string;
+  initialStep?: number;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [customers, setCustomers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
-  const [jobs, setJobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
+  const [jobs, setJobs, jobsHydrated] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const [materialCatalog] = useLocalStorage<MaterialCatalogItem[]>("hsa-materials", mockMaterials);
   const [toolCatalog] = useLocalStorage<ToolCatalogItem[]>("hsa-tools", mockTools);
   const [emergencySurcharges] = useLocalStorage("hsa-emergency-surcharges", mockEmergencySurcharges);
@@ -126,12 +137,12 @@ export function JobWizard() {
     () => customers.find((customer) => customer.id === draft.customerId),
     [customers, draft.customerId]
   );
-  const searchParams = useSearchParams();
+  const loadedEditId = useRef<string | null>(null);
 
   // Wenn ein customerId Query-Parameter gesetzt ist, versuchen wir den Kunden vorauszuwählen
   // und direkt auf Schritt 1 zu springen, falls der Kunde existiert und nicht archiviert ist.
   useEffect(() => {
-    const paramCustomerId = searchParams?.get("customerId");
+    const paramCustomerId = initialCustomerId;
     if (!paramCustomerId) return;
     // Falls bereits ein Kunde ausgewählt wurde, nicht überschreiben
     if (draft.customerId) return;
@@ -145,7 +156,27 @@ export function JobWizard() {
         setStep(1);
       });
     }
-  }, [searchParams, customers, draft.customerId, step]);
+  }, [initialCustomerId, customers, draft.customerId, step]);
+
+  useEffect(() => {
+    if (!editJobId || !jobsHydrated || loadedEditId.current === editJobId) return;
+    const existing = jobs.find((job) => job.id === editJobId);
+    if (!existing) return;
+    const { id: _id, status: _status, createdAt: _createdAt, ...editable } = existing;
+    void _id;
+    void _status;
+    void _createdAt;
+    loadedEditId.current = editJobId;
+    queueMicrotask(() => {
+      setDraft({
+        ...initialDraft,
+        ...editable,
+        scheduledDate: editable.scheduledDate || localDateKey(),
+        scheduledStartTime: editable.scheduledStartTime || editable.startTime || "08:00"
+      });
+      setStep(initialStep ?? 3);
+    });
+  }, [editJobId, initialStep, jobs, jobsHydrated]);
 
   // Kunden, die für neue Aufträge auswählbar sind (archivierte Kunden ausblenden)
   const selectableCustomers = customers.filter((c) => c.archived !== true);
@@ -159,13 +190,15 @@ export function JobWizard() {
 
   function saveJob() {
     const nextJob: Job = {
-      id: createId("job"),
+      id: editJobId ?? createId("job"),
       ...draft,
       status: draft.acceptance.customerConfirmed === true ? "Abgeschlossen" : "Offen",
-      createdAt: new Date().toISOString()
+      createdAt: editJobId
+        ? (jobs.find((job) => job.id === editJobId)?.createdAt ?? new Date().toISOString())
+        : new Date().toISOString()
     };
-    setJobs([nextJob, ...jobs]);
-    router.push("/jobs");
+    setJobs(editJobId ? jobs.map((job) => (job.id === editJobId ? nextJob : job)) : [nextJob, ...jobs]);
+    router.push(`/jobs/${nextJob.id}`);
   }
 
   function abortJob() {
@@ -269,7 +302,7 @@ export function JobWizard() {
         <CardHeader>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle>{steps[step]}</CardTitle>
+              <CardTitle>{editJobId ? `Einsatz bearbeiten · ${steps[step]}` : steps[step]}</CardTitle>
               <CardDescription>
                 Schritt {step + 1} von {steps.length}
               </CardDescription>
@@ -308,6 +341,11 @@ export function JobWizard() {
           <Button type="button" size="lg" variant="outline" onClick={abortJob}>
             <OctagonX className="h-5 w-5" />
             Auftrag beenden
+          </Button>
+        ) : editJobId && step === 6 ? (
+          <Button type="button" size="lg" disabled={!canContinue} onClick={saveJob}>
+            <Save className="h-5 w-5" />
+            Auftrag abschließen
           </Button>
         ) : step < steps.length - 1 ? (
           <Button type="button" size="lg" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>
@@ -423,8 +461,28 @@ export function JobWizard() {
     if (step === 3) {
       return (
         <div className="grid gap-4">
+          <div className="grid gap-4 rounded-lg border bg-secondary/40 p-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="scheduledDate">Einsatzdatum</Label>
+              <Input
+                id="scheduledDate"
+                type="date"
+                value={draft.scheduledDate}
+                onChange={(event) => updateDraft({ scheduledDate: event.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduledStartTime">Geplanter Beginn</Label>
+              <Input
+                id="scheduledStartTime"
+                type="time"
+                value={draft.scheduledStartTime}
+                onChange={(event) => updateDraft({ scheduledStartTime: event.target.value })}
+              />
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Beschreibung</Label>
+            <Label htmlFor="description">Arbeitsauftrag</Label>
             <Textarea
               id="description"
               value={draft.description}
@@ -782,6 +840,15 @@ function validateStep(step: number, draft: JobDraft) {
       draft.legal.customerConsent === true &&
       Boolean(draft.legal.signatureDataUrl) &&
       draft.legal.consentDeclined !== true
+    );
+  }
+  if (step === 3) {
+    return Boolean(draft.scheduledDate && draft.scheduledStartTime && draft.description.trim());
+  }
+  if (step === 6) {
+    return (
+      draft.acceptance.customerConfirmed === true &&
+      (draft.acceptance.serviceCompleted === true || draft.acceptance.repairNotPossible === true)
     );
   }
   return true;

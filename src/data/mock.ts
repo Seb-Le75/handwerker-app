@@ -1,4 +1,16 @@
-import type { Customer, EmergencySurcharge, Job, MaintenanceCheckItem, MaterialCatalogItem, ToolCatalogItem } from "@/types";
+import type {
+  Customer,
+  EmergencySurcharge,
+  Job,
+  MaintenanceCheckItem,
+  MaterialCatalogItem,
+  ToolCatalogItem
+} from "@/types";
+
+const today = (() => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+})();
 
 export const mockCustomers: Customer[] = [
   {
@@ -56,6 +68,8 @@ export const mockJobs: Job[] = [
     customerId: "cust-1001",
     type: "Wartung",
     description: "Jahreswartung Gastherme inklusive Sichtpruefung und Funktionskontrolle.",
+    scheduledDate: today,
+    scheduledStartTime: "09:00",
     startTime: "09:00",
     endTime: "10:30",
     technicianCount: 1,
@@ -110,6 +124,8 @@ export const mockJobs: Job[] = [
     customerId: "cust-1002",
     type: "Notdienst",
     description: "Undichtigkeit am Eckventil im Gaeste-WC.",
+    scheduledDate: today,
+    scheduledStartTime: "13:30",
     startTime: "18:15",
     endTime: "19:05",
     technicianCount: 2,

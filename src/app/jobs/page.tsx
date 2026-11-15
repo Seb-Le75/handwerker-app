@@ -9,20 +9,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { formatCustomerName, formatDateTime } from "@/lib/utils";
+import { compareJobsByAppointment, formatAppointment } from "@/lib/jobs";
+import { formatCustomerName } from "@/lib/utils";
 import type { Customer, Job } from "@/types";
 
 export default function JobsPage() {
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [jobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
+  const sortedJobs = [...jobs].sort((left, right) => {
+    if (left.status === "Offen" && right.status !== "Offen") return -1;
+    if (left.status !== "Offen" && right.status === "Offen") return 1;
+    return compareJobsByAppointment(left, right);
+  });
 
   return (
     <AppShell>
       <div className="grid gap-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-normal">Auftraege</h2>
-            <p className="mt-2 text-muted-foreground">Alle lokal erfassten Einsaetze, Auftragsdetails und Protokolle.</p>
+            <h2 className="text-3xl font-semibold tracking-normal">Aufträge</h2>
+            <p className="mt-2 text-muted-foreground">
+              Offene Einsätze zuerst, anschließend abgeschlossene Protokolle.
+            </p>
           </div>
           <Button asChild size="lg">
             <Link href="/new">
@@ -33,7 +41,7 @@ export default function JobsPage() {
         </div>
 
         <div className="grid gap-4">
-          {jobs.map((job) => {
+          {sortedJobs.map((job) => {
             const customer = customers.find((item) => item.id === job.customerId);
             const materialLines = (job.materials ?? []).filter((line) => line.materialName);
             const materialSum = materialLines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
@@ -50,14 +58,14 @@ export default function JobsPage() {
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div>
                         <CardTitle>{job.type}</CardTitle>
-                      <CardDescription>
+                        <CardDescription>
                           {customer
                             ? `${customer.customerNumber ? `${customer.customerNumber} · ` : ""}${formatCustomerName(
                                 customer.firstName,
                                 customer.lastName
                               )}`
-                            : "Unbekannter Kunde"} ·{" "}
-                          {formatDateTime(job.createdAt)}
+                            : "Unbekannter Kunde"}{" "}
+                          · {formatAppointment(job)}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
@@ -72,15 +80,22 @@ export default function JobsPage() {
                       {job.notes && <p className="mt-2 text-sm text-muted-foreground">{job.notes}</p>}
                     </div>
                     <div className="grid gap-2 rounded-lg bg-secondary/60 p-4 text-sm">
-                      <span>Arbeitszeit: {job.startTime} bis {job.endTime}</span>
+                      <span>
+                        Arbeitszeit: {job.startTime} bis {job.endTime}
+                      </span>
                       <span>Monteure: {job.technicianCount ?? "nicht erfasst"}</span>
                       {job.type === "Notdienst" && (
-                        <span>Notdienst-Zulage: {job.emergencySurchargePercent ? `${job.emergencySurchargePercent} Prozent` : "nicht erfasst"}</span>
+                        <span>
+                          Notdienst-Zulage:{" "}
+                          {job.emergencySurchargePercent ? `${job.emergencySurchargePercent} Prozent` : "nicht erfasst"}
+                        </span>
                       )}
                       <span>Material: {materialLines.length > 0 ? formatCurrency(materialSum) : "nicht erfasst"}</span>
                       <span>Werkzeug: {toolLines.length > 0 ? formatCurrency(toolSum) : "nicht erfasst"}</span>
                       <span>Fotos: {job.photos.length}</span>
-                      <span>Abnahme: {job.acceptance.customerConfirmed === true ? "vom Kunden bestaetigt" : "offen"}</span>
+                      <span>
+                        Abnahme: {job.acceptance.customerConfirmed === true ? "vom Kunden bestaetigt" : "offen"}
+                      </span>
                       {job.acceptance.repairNotPossible === true && <span>Reparatur: nicht moeglich</span>}
                     </div>
                   </CardContent>

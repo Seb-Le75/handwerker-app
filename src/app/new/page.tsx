@@ -1,17 +1,19 @@
-"use client";
-
-"use client";
-
-import dynamic from "next/dynamic";
 import { AppShell } from "@/components/AppShell";
+import { JobWizard } from "@/components/JobWizard";
 
-// JobWizard is a client component that uses useSearchParams; load it dynamically with no SSR
-const JobWizard = dynamic(() => import("@/components/JobWizard").then((mod) => mod.JobWizard), { ssr: false });
-
-export default function NewJobPage() {
+export default async function NewJobPage({
+  searchParams
+}: {
+  searchParams: Promise<{ customerId?: string; jobId?: string; step?: string }>;
+}) {
+  const query = await searchParams;
   return (
     <AppShell>
-      <JobWizard />
+      <JobWizard
+        initialCustomerId={query.customerId}
+        editJobId={query.jobId}
+        initialStep={query.step === "acceptance" ? 6 : undefined}
+      />
     </AppShell>
   );
 }
