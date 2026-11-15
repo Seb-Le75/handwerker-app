@@ -23,6 +23,21 @@ export function compareJobsByAppointment(left: Job, right: Job) {
   );
 }
 
+export function isOpenJob(job: Job) {
+  return job.status === "Offen" || job.status === "Entwurf";
+}
+
+export function isJobOverdue(job: Job, today = localDateKey()) {
+  return isOpenJob(job) && scheduledDate(job, today) < today;
+}
+
+export function jobProgressLabel(job: Job) {
+  if (job.status === "Abgeschlossen") {
+    return job.officeReviewedAt ? "Geprüft" : "Büroprüfung";
+  }
+  return job.progress ?? "Geplant";
+}
+
 export function formatAppointment(job: Job, today = localDateKey()) {
   const date = scheduledDate(job, today);
   const time = scheduledTime(job);

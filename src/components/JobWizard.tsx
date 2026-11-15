@@ -197,13 +197,16 @@ export function JobWizard({
   const availableMaintenanceChecks = maintenanceChecksCatalog.filter((check) => check.designation.trim());
 
   function saveJob() {
+    const existingJob = editJobId ? jobs.find((job) => job.id === editJobId) : undefined;
+    const isCompleted = draft.acceptance.customerConfirmed === true;
     const nextJob: Job = {
       id: editJobId ?? createId("job"),
       ...draft,
-      status: draft.acceptance.customerConfirmed === true ? "Abgeschlossen" : "Offen",
-      createdAt: editJobId
-        ? (jobs.find((job) => job.id === editJobId)?.createdAt ?? new Date().toISOString())
-        : new Date().toISOString()
+      status: isCompleted ? "Abgeschlossen" : "Offen",
+      progress: isCompleted ? "Büroprüfung" : (existingJob?.progress ?? "Geplant"),
+      assignedTechnician: existingJob?.assignedTechnician ?? "Mara Klein",
+      officeReviewedAt: isCompleted ? existingJob?.officeReviewedAt : undefined,
+      createdAt: editJobId ? (existingJob?.createdAt ?? new Date().toISOString()) : new Date().toISOString()
     };
     setJobs(editJobId ? jobs.map((job) => (job.id === editJobId ? nextJob : job)) : [nextJob, ...jobs]);
     router.push(`/jobs/${nextJob.id}`);

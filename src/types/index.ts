@@ -21,6 +21,7 @@ export type Customer = {
 export type JobType = "Reparatur" | "Notdienst" | "Wartung" | "Angebot" | "Installation";
 
 export type JobStatus = "Entwurf" | "Offen" | "Abgeschlossen" | "Abgebrochen";
+export type JobProgress = "Geplant" | "Unterwegs" | "In Arbeit" | "Büroprüfung";
 export type TechnicianRole = "Lehrling" | "Geselle" | "Meister";
 export type CostCategory = "1" | "2" | "3";
 export type MaterialUnit = "Stück" | "m" | "cm" | "m²" | "m³" | "ml" | "l" | "kg" | "g" | "Pauschal";
@@ -126,6 +127,9 @@ export type Job = {
   tools?: JobToolLine[];
   maintenanceChecks?: JobMaintenanceCheck[];
   status: JobStatus;
+  progress?: JobProgress;
+  assignedTechnician?: string;
+  officeReviewedAt?: string;
   notes: string;
   legal: LegalConsent;
   photos: UploadedPhoto[];

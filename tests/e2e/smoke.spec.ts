@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 async function signVisibleCanvas(page: import("@playwright/test").Page) {
   const canvas = page.locator("canvas:visible").last();
+  await canvas.scrollIntoViewIfNeeded();
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Signature canvas is not visible");
   await page.mouse.move(box.x + 35, box.y + box.height * 0.65);
@@ -15,7 +16,7 @@ test("the existing dashboard loads", async ({ page }) => {
   const response = await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Handwerker Service App" })).toBeVisible();
-  await expect(page.getByRole("navigation").getByRole("link", { name: "Neuer Auftrag" })).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Auftrag erfassen" })).toBeVisible();
   expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response?.headers()["x-frame-options"]).toBe("DENY");
 });
@@ -56,7 +57,7 @@ test("the iPad field workflow opens and edits the next scheduled job", async ({ 
   });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Heute anstehende Einsätze" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mein nächster Einsatz" })).toBeVisible();
   await expect(page.getByText("13:30").first()).toBeVisible();
   await page
     .getByRole("link", { name: /Auftrag öffnen/ })
@@ -101,6 +102,24 @@ test("the iPad field workflow opens and edits the next scheduled job", async ({ 
   await expect(page.getByLabel("Menge für Material 1")).toHaveValue("3,15");
   await expect(page.getByText("7,80 € / m")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("the field and backoffice areas share the local job workflow", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("Baustellenmodus · Mara Klein")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Navigation" })).toBeVisible();
+  await page.getByRole("button", { name: "Anfahrt starten" }).click();
+  await expect(page.getByText("Unterwegs", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "Büro", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Büroübersicht" })).toBeVisible();
+  await expect(page.getByText("Offene Aufträge")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Auftragssteuerung" })).toBeVisible();
+  await page.getByRole("button", { name: /Prüfung/ }).click();
+  await expect(page.getByRole("button", { name: "Büroprüfung abschließen" })).toBeVisible();
+  await page.getByRole("button", { name: "Büroprüfung abschließen" }).click();
+  await expect(page.getByText("In diesem Bereich gibt es keine Aufträge.")).toBeVisible();
 });
 
 test("new job opens the complete legal and acceptance workflow", async ({ page }) => {
