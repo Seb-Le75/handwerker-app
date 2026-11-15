@@ -15,9 +15,24 @@ type LegalStepProps = {
 
 export function LegalStep({ value, onChange }: LegalStepProps) {
   const options = [
-    { key: "privacyReceived", label: "Datenschutz erhalten", href: "/documents/datenschutz", document: "Datenschutzerklaerung" },
-    { key: "cancellationReceived", label: "Widerruf erhalten", href: "/documents/widerruf", document: "Widerrufsbelehrung" },
-    { key: "workStartApproved", label: "Zustimmung Arbeitsbeginn", href: "/documents/arbeitsbeginn", document: "Auftragsbeginn" }
+    {
+      key: "privacyReceived",
+      label: "Datenschutz erhalten",
+      href: "/documents/datenschutz",
+      document: "Datenschutzerklärung"
+    },
+    {
+      key: "cancellationReceived",
+      label: "Widerruf erhalten",
+      href: "/documents/widerruf",
+      document: "Widerrufsbelehrung"
+    },
+    {
+      key: "workStartApproved",
+      label: "Zustimmung Arbeitsbeginn",
+      href: "/documents/arbeitsbeginn",
+      document: "Auftragsbeginn"
+    }
   ] as const;
 
   return (
@@ -39,7 +54,7 @@ export function LegalStep({ value, onChange }: LegalStepProps) {
               className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-primary hover:underline"
               onClick={(event) => event.stopPropagation()}
             >
-              {option.document} oeffnen
+              {option.document} öffnen
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </span>
@@ -59,7 +74,7 @@ export function LegalStep({ value, onChange }: LegalStepProps) {
         <span className="grid gap-1">
           <span className="text-base">Kunde ist einverstanden und stimmt zu</span>
           <span className="text-sm font-normal text-muted-foreground">
-            Der Kunde bestaetigt die rechtlichen Hinweise, die Zustimmung zum Arbeitsbeginn und die Auftragserfassung.
+            Der Kunde bestätigt die rechtlichen Hinweise, die Zustimmung zum Arbeitsbeginn und die Auftragserfassung.
           </span>
         </span>
       </Label>

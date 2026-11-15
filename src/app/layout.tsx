@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Handwerker Service App",
-  description: "Digitale Vor-Ort-Auftragserfassung fuer SHK-Betriebe"
+  description: "Digitale Vor-Ort-Auftragserfassung für SHK-Betriebe"
 };
 
 export const viewport: Viewport = {

@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, OctagonX, Plus, Save, SkipForward } from "lucide
 
 import { AcceptanceStep } from "@/components/AcceptanceStep";
 import { CustomerForm } from "@/components/CustomerForm";
+import { DecimalInput } from "@/components/DecimalInput";
 import { LegalStep } from "@/components/LegalStep";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { ProgressStepper } from "@/components/ProgressStepper";
@@ -23,11 +24,13 @@ import {
   mockJobs,
   mockMaintenanceChecks,
   mockMaterials,
+  mockPaymentSettings,
   mockTools
 } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { createId, formatCustomerName, formatAddress } from "@/lib/utils";
 import { localDateKey } from "@/lib/jobs";
+import { normalizeMaterialUnit } from "@/lib/materials";
 import type {
   CostCategory,
   Customer,
@@ -38,6 +41,7 @@ import type {
   JobType,
   MaintenanceCheckItem,
   MaterialCatalogItem,
+  PaymentSettings,
   TechnicianRole,
   ToolCatalogItem
 } from "@/types";
@@ -50,7 +54,7 @@ const steps = [
   "Arbeitszeiten",
   "Material",
   "Abnahme",
-  "Uebersicht"
+  "Übersicht"
 ];
 const requiredSteps = new Set([0, 1, 2, 3]);
 const technicianRoles: TechnicianRole[] = ["Lehrling", "Geselle", "Meister"];
@@ -108,7 +112,8 @@ const initialDraft: JobDraft = {
     systemFunctional: false,
     repairNotPossible: false,
     repairNotPossibleReason: "",
-    customerConfirmed: false
+    customerConfirmed: false,
+    signatureDataUrl: ""
   }
 };
 
@@ -132,6 +137,7 @@ export function JobWizard({
     "hsa-maintenance-checks",
     mockMaintenanceChecks
   );
+  const [paymentSettings] = useLocalStorage<PaymentSettings>("hsa-payment-settings", mockPaymentSettings);
   const [draft, setDraft] = useState<JobDraft>(initialDraft);
   const selectedCustomer = useMemo(
     () => customers.find((customer) => customer.id === draft.customerId),
@@ -171,6 +177,7 @@ export function JobWizard({
       setDraft({
         ...initialDraft,
         ...editable,
+        materials: editable.materials?.map((line) => ({ ...line, unit: normalizeMaterialUnit(line.unit) })),
         scheduledDate: editable.scheduledDate || localDateKey(),
         scheduledStartTime: editable.scheduledStartTime || editable.startTime || "08:00"
       });
@@ -183,7 +190,8 @@ export function JobWizard({
 
   const updateDraft = (next: Partial<JobDraft>) => setDraft((current) => ({ ...current, ...next }));
   const canContinue = validateStep(step, draft);
-  const canSkip = step > 0 && step < steps.length - 1 && !requiredSteps.has(step);
+  const canSkip =
+    step > 0 && step < steps.length - 1 && !requiredSteps.has(step) && !(editJobId !== undefined && step === 6);
   const availableMaterials = materialCatalog.filter((material) => material.designation.trim());
   const availableTools = toolCatalog.filter((tool) => tool.designation.trim());
   const availableMaintenanceChecks = maintenanceChecksCatalog.filter((check) => check.designation.trim());
@@ -224,7 +232,7 @@ export function JobWizard({
     updateMaterialLine(lineId, {
       materialId,
       materialName: material?.designation ?? "",
-      unit: material?.unit ?? "Stück",
+      unit: normalizeMaterialUnit(material?.unit),
       unitPrice: material?.unitPrice ?? 0
     });
   }
@@ -287,10 +295,29 @@ export function JobWizard({
   function toggleMaintenanceCheck(check: MaintenanceCheckItem) {
     const current = draft.maintenanceChecks ?? [];
     const selected = current.some((item) => item.id === check.id);
+    const currentMaterials = draft.materials ?? [];
+    const configuredMaterials = (check.materials ?? []).flatMap((materialDefault) => {
+      const material = materialCatalog.find((item) => item.id === materialDefault.materialId);
+      if (!material?.designation.trim()) return [];
+      return [
+        {
+          id: createId("mat-line"),
+          quantity: materialDefault.quantity,
+          unit: normalizeMaterialUnit(material.unit),
+          materialId: material.id,
+          materialName: material.designation,
+          unitPrice: material.unitPrice,
+          sourceMaintenanceId: check.id
+        }
+      ];
+    });
     updateDraft({
       maintenanceChecks: selected
         ? current.filter((item) => item.id !== check.id)
-        : [...current, { id: check.id, designation: check.designation }]
+        : [...current, { ...check, materials: check.materials?.map((item) => ({ ...item })) }],
+      materials: selected
+        ? currentMaterials.filter((line) => line.sourceMaintenanceId !== check.id)
+        : [...currentMaterials, ...configuredMaterials]
     });
   }
 
@@ -328,7 +355,7 @@ export function JobWizard({
             onClick={() => setStep((current) => current - 1)}
           >
             <ArrowLeft className="h-5 w-5" />
-            Zurueck
+            Zurück
           </Button>
           {canSkip && (
             <Button type="button" variant="secondary" size="lg" onClick={() => setStep((current) => current + 1)}>
@@ -343,9 +370,9 @@ export function JobWizard({
             Auftrag beenden
           </Button>
         ) : editJobId && step === 6 ? (
-          <Button type="button" size="lg" disabled={!canContinue} onClick={saveJob}>
-            <Save className="h-5 w-5" />
-            Auftrag abschließen
+          <Button type="button" size="lg" disabled={!canContinue} onClick={() => setStep(7)}>
+            Weiter zur Übersicht
+            <ArrowRight className="h-5 w-5" />
           </Button>
         ) : step < steps.length - 1 ? (
           <Button type="button" size="lg" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>
@@ -355,7 +382,7 @@ export function JobWizard({
         ) : (
           <Button type="button" size="lg" disabled={!canContinue} onClick={saveJob}>
             <Save className="h-5 w-5" />
-            Auftrag speichern
+            {editJobId ? "Auftrag abschließen" : "Auftrag speichern"}
           </Button>
         )}
       </div>
@@ -487,7 +514,7 @@ export function JobWizard({
               id="description"
               value={draft.description}
               onChange={(event) => updateDraft({ description: event.target.value })}
-              placeholder="Auftrag, Schaden, Ursache, Kundenangaben und erste Einschaetzung"
+              placeholder="Auftrag, Schaden, Ursache, Kundenangaben und erste Einschätzung"
             />
           </div>
           <div className="space-y-2">
@@ -496,7 +523,7 @@ export function JobWizard({
               id="notes"
               value={draft.notes}
               onChange={(event) => updateDraft({ notes: event.target.value })}
-              placeholder="Material, Rueckfragen, Besonderheiten vor Ort"
+              placeholder="Material, Rückfragen, Besonderheiten vor Ort"
             />
           </div>
           <div className="space-y-2">
@@ -606,7 +633,7 @@ export function JobWizard({
           />
 
           <CostCategorySelector
-            label="Kfz- und Ruestkosten"
+            label="Kfz- und Rüstkosten"
             value={draft.vehicleSetupCostCategory}
             onChange={(vehicleSetupCostCategory) => updateDraft({ vehicleSetupCostCategory })}
           />
@@ -625,9 +652,10 @@ export function JobWizard({
           {draft.type === "Wartung" && (
             <div className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm">
               <div>
-                <h3 className="text-lg font-semibold tracking-normal">Regelpruefungen / Wartungen</h3>
+                <h3 className="text-lg font-semibold tracking-normal">Regelprüfungen / Wartungen</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Konfigurierte Wartungspunkte fuer diesen Auftrag auswaehlen.
+                  Konfigurierte Wartungspunkte für diesen Auftrag auswählen. Dauer, Kosten und Material werden
+                  übernommen.
                 </p>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
@@ -644,7 +672,11 @@ export function JobWizard({
                       }`}
                       onClick={() => toggleMaintenanceCheck(check)}
                     >
-                      {check.designation}
+                      <span className="block">{check.designation}</span>
+                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                        {check.durationMinutes ?? 0} Min. ·{" "}
+                        {formatCurrency((check.flatRate ?? 0) + (check.travelFlatRate ?? 0))}
+                      </span>
                     </button>
                   );
                 })}
@@ -652,53 +684,56 @@ export function JobWizard({
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[860px] rounded-lg border bg-white">
-              <div className="grid grid-cols-[7rem_9rem_1fr_10rem_11rem] gap-3 border-b bg-secondary/70 px-4 py-3 text-sm font-semibold">
-                <span>Anzahl</span>
-                <span>Einheit</span>
-                <span>Materialart</span>
-                <span>Einzelpreis</span>
-                <span>Preis</span>
-              </div>
-              <div className="grid">
-                {materialLines.map((line) => (
-                  <div
-                    key={line.id}
-                    className="grid grid-cols-[7rem_9rem_1fr_10rem_11rem] gap-3 border-b px-4 py-3 last:border-b-0"
+          <div className="grid gap-3">
+            {materialLines.map((line, index) => (
+              <div key={line.id} className="grid gap-4 rounded-lg border bg-white p-4 shadow-sm">
+                <div className="space-y-2">
+                  <Label htmlFor={`material-${line.id}`}>Material {index + 1}</Label>
+                  <select
+                    id={`material-${line.id}`}
+                    className="min-h-12 w-full rounded-md border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={line.materialId}
+                    onChange={(event) => selectMaterial(line.id, event.target.value)}
                   >
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                    <option value="">Material wählen</option>
+                    {availableMaterials.map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.designation}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3 md:grid-cols-[minmax(0,1fr)_8rem_minmax(9rem,1fr)_minmax(9rem,1fr)]">
+                  <div className="space-y-2">
+                    <Label>Menge</Label>
+                    <DecimalInput
+                      ariaLabel={`Menge für Material ${index + 1}`}
                       value={line.quantity}
-                      onChange={(event) => updateMaterialLine(line.id, { quantity: Number(event.target.value) })}
+                      onChange={(quantity) => updateMaterialLine(line.id, { quantity })}
                     />
-                    <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-sm font-medium">
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Einheit</Label>
+                    <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-base font-semibold">
                       {line.unit}
                     </div>
-                    <select
-                      className="min-h-12 rounded-md border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={line.materialId}
-                      onChange={(event) => selectMaterial(line.id, event.target.value)}
-                    >
-                      <option value="">Material waehlen</option>
-                      {availableMaterials.map((material) => (
-                        <option key={material.id} value={material.id}>
-                          {material.designation}
-                        </option>
-                      ))}
-                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Einzelpreis</Label>
                     <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-sm font-medium">
-                      {formatCurrency(line.unitPrice)}
+                      {formatCurrency(line.unitPrice)} / {line.unit}
                     </div>
-                    <div className="flex min-h-12 items-center rounded-md border bg-secondary/50 px-3 text-sm font-semibold">
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Gesamtpreis</Label>
+                    <div className="flex min-h-12 items-center rounded-md border bg-primary/5 px-3 text-sm font-semibold">
                       {formatCurrency(line.quantity * line.unitPrice)}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -713,7 +748,7 @@ export function JobWizard({
 
           <div className="grid gap-4">
             <div>
-              <h3 className="text-lg font-semibold tracking-normal">Geraete und Werkzeug</h3>
+              <h3 className="text-lg font-semibold tracking-normal">Geräte und Werkzeug</h3>
               <p className="mt-1 text-sm text-muted-foreground">Werkzeugeinsatz mit Anzahl und Kostensatz erfassen.</p>
             </div>
             <div className="overflow-x-auto">
@@ -742,7 +777,7 @@ export function JobWizard({
                         value={line.toolId}
                         onChange={(event) => selectTool(line.id, event.target.value)}
                       >
-                        <option value="">Werkzeug waehlen</option>
+                        <option value="">Werkzeug wählen</option>
                         {availableTools.map((tool) => (
                           <option key={tool.id} value={tool.id}>
                             {tool.designation}
@@ -779,7 +814,7 @@ export function JobWizard({
       return <AcceptanceStep value={draft.acceptance} onChange={(acceptance) => updateDraft({ acceptance })} />;
     }
 
-    return <SummaryStep draft={draft} customer={selectedCustomer} />;
+    return <SummaryStep draft={draft} customer={selectedCustomer} paymentSettings={paymentSettings} />;
   }
 }
 
@@ -848,6 +883,7 @@ function validateStep(step: number, draft: JobDraft) {
   if (step === 6) {
     return (
       draft.acceptance.customerConfirmed === true &&
+      Boolean(draft.acceptance.signatureDataUrl) &&
       (draft.acceptance.serviceCompleted === true || draft.acceptance.repairNotPossible === true)
     );
   }

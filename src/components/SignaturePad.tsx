@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 type SignaturePadProps = {
   value: string;
   onChange: (value: string) => void;
+  title?: string;
 };
 
-export function SignaturePad({ value, onChange }: SignaturePadProps) {
+export function SignaturePad({ value, onChange, title = "Unterschrift Kunde" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const [hasSignature, setHasSignature] = useState(Boolean(value));
@@ -71,12 +72,12 @@ export function SignaturePad({ value, onChange }: SignaturePadProps) {
     <div className="grid gap-3 rounded-lg border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-semibold">Unterschrift Kunde</p>
+          <p className="font-semibold">{title}</p>
           <p className="text-sm text-muted-foreground">Mit Finger oder Apple Pencil unterschreiben.</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={clearSignature} disabled={!hasSignature}>
           <RotateCcw className="h-4 w-4" />
-          Loeschen
+          Löschen
         </Button>
       </div>
       <canvas

@@ -203,7 +203,7 @@ export default function CustomerDetailPage() {
                     customer.firstName,
                     customer.lastName
                   )}`
-                : "Noch kein Kunde ausgewaehlt"}
+                : "Noch kein Kunde ausgewählt"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -351,8 +351,8 @@ export default function CustomerDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Auftraege des Kunden</CardTitle>
-            <CardDescription>{selectedJobs.length} lokal gespeicherte Einsaetze</CardDescription>
+            <CardTitle>Aufträge des Kunden</CardTitle>
+            <CardDescription>{selectedJobs.length} lokal gespeicherte Einsätze</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {selectedJobs.length > 0 ? (
@@ -377,7 +377,7 @@ export default function CustomerDetailPage() {
               ))
             ) : (
               <div className="rounded-lg border bg-white p-4 text-sm text-muted-foreground shadow-sm">
-                Fuer diesen Kunden wurden noch keine Auftraege erstellt.
+                Für diesen Kunden wurden noch keine Aufträge erstellt.
               </div>
             )}
           </CardContent>
