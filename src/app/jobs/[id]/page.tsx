@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download, ImageIcon } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Wrench } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { formatAppointment } from "@/lib/jobs";
 import { formatCustomerName, formatDateTime, formatAddress } from "@/lib/utils";
 import type { CostCategory, Customer, Job } from "@/types";
 
@@ -99,16 +100,25 @@ export default function JobDetailPage() {
   return (
     <AppShell>
       <div className="grid gap-5">
-        <div className="print-hidden flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
+        <div className="print-hidden flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-3">
             <Button asChild variant="outline">
               <Link href="/jobs">
                 <ArrowLeft className="h-4 w-4" />
                 Zurueck
               </Link>
             </Button>
+            <Button asChild size="lg">
+              <Link href={`/new?jobId=${encodeURIComponent(job.id)}&step=acceptance`}>
+                <Wrench className="h-5 w-5" />
+                {job.status === "Abgeschlossen" ? "Abnahme bearbeiten" : "Einsatz abschließen"}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/new?jobId=${encodeURIComponent(job.id)}`}>Auftragsdaten bearbeiten</Link>
+            </Button>
           </div>
-          <Button size="lg" onClick={() => window.print()}>
+          <Button variant="outline" size="lg" onClick={() => window.print()}>
             <Download className="h-5 w-5" />
             PDF erstellen
           </Button>
@@ -119,7 +129,9 @@ export default function JobDetailPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <CardTitle>Auftragsprotokoll {job.id}</CardTitle>
-                <CardDescription>{formatDateTime(job.createdAt)}</CardDescription>
+                <CardDescription>
+                  Termin: {formatAppointment(job)} · Erfasst: {formatDateTime(job.createdAt)}
+                </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge>{job.type}</Badge>
@@ -174,7 +186,10 @@ export default function JobDetailPage() {
                       <span>Preis</span>
                     </div>
                     {materialLines.map((line) => (
-                      <div key={line.id} className="grid grid-cols-[7rem_8rem_1fr_10rem_10rem] gap-3 border-b px-4 py-3 text-sm last:border-b-0">
+                      <div
+                        key={line.id}
+                        className="grid grid-cols-[7rem_8rem_1fr_10rem_10rem] gap-3 border-b px-4 py-3 text-sm last:border-b-0"
+                      >
                         <span>{line.quantity}</span>
                         <span>{line.unit}</span>
                         <span>{line.materialName}</span>
@@ -185,7 +200,9 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border bg-secondary/50 p-4 text-muted-foreground">Keine Materialien erfasst</div>
+                <div className="rounded-lg border bg-secondary/50 p-4 text-muted-foreground">
+                  Keine Materialien erfasst
+                </div>
               )}
             </section>
 
@@ -204,7 +221,10 @@ export default function JobDetailPage() {
                       <span>Preis</span>
                     </div>
                     {toolLines.map((line) => (
-                      <div key={line.id} className="grid grid-cols-[7rem_1fr_10rem_10rem] gap-3 border-b px-4 py-3 text-sm last:border-b-0">
+                      <div
+                        key={line.id}
+                        className="grid grid-cols-[7rem_1fr_10rem_10rem] gap-3 border-b px-4 py-3 text-sm last:border-b-0"
+                      >
                         <span>{line.quantity}</span>
                         <span>{line.toolName}</span>
                         <span>{formatCurrency(line.costRate)}</span>
@@ -214,7 +234,9 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border bg-secondary/50 p-4 text-muted-foreground">Keine Werkzeuge erfasst</div>
+                <div className="rounded-lg border bg-secondary/50 p-4 text-muted-foreground">
+                  Keine Werkzeuge erfasst
+                </div>
               )}
             </section>
 
@@ -250,14 +272,19 @@ export default function JobDetailPage() {
                         job.legal.workStartApproved &&
                         job.legal.customerConsent === true
                       ? "Datenschutz, Widerruf, Arbeitsbeginn und Zustimmung bestaetigt"
-                    : "Unvollstaendig"
+                      : "Unvollstaendig"
                 }
               />
-              <DetailRow label="Unterschrift Rechtliches" value={job.legal.signatureDataUrl ? "Vorhanden" : "Nicht erfasst"} />
+              <DetailRow
+                label="Unterschrift Rechtliches"
+                value={job.legal.signatureDataUrl ? "Vorhanden" : "Nicht erfasst"}
+              />
               {job.legal.signatureDataUrl && (
                 <div className="md:col-span-2">
                   <div className="rounded-md bg-secondary/60 p-3">
-                    <span className="block text-xs font-semibold uppercase text-muted-foreground">Kundenunterschrift</span>
+                    <span className="block text-xs font-semibold uppercase text-muted-foreground">
+                      Kundenunterschrift
+                    </span>
                     <img
                       src={job.legal.signatureDataUrl}
                       alt="Kundenunterschrift"
@@ -269,17 +296,27 @@ export default function JobDetailPage() {
               <DetailRow
                 label="Abnahme"
                 value={
-                  job.acceptance.customerConfirmed === true
-                    ? "Vom Kunden bestaetigt"
-                    : "Nicht vom Kunden bestaetigt"
+                  job.acceptance.customerConfirmed === true ? "Vom Kunden bestaetigt" : "Nicht vom Kunden bestaetigt"
                 }
               />
-              <DetailRow label="Leistung erbracht" value={job.acceptance.serviceCompleted === true ? "Ja" : "Nicht bestaetigt"} />
-              <DetailRow label="Anlage funktionsfaehig" value={job.acceptance.systemFunctional === true ? "Ja" : "Nicht bestaetigt"} />
-              <DetailRow label="Reparatur nicht moeglich" value={job.acceptance.repairNotPossible === true ? "Ja" : "Nein"} />
+              <DetailRow
+                label="Leistung erbracht"
+                value={job.acceptance.serviceCompleted === true ? "Ja" : "Nicht bestaetigt"}
+              />
+              <DetailRow
+                label="Anlage funktionsfaehig"
+                value={job.acceptance.systemFunctional === true ? "Ja" : "Nicht bestaetigt"}
+              />
+              <DetailRow
+                label="Reparatur nicht moeglich"
+                value={job.acceptance.repairNotPossible === true ? "Ja" : "Nein"}
+              />
               {job.acceptance.repairNotPossible === true && (
                 <div className="md:col-span-2">
-                  <DetailRow label="Bemerkung zur nicht moeglichen Reparatur" value={job.acceptance.repairNotPossibleReason} />
+                  <DetailRow
+                    label="Bemerkung zur nicht moeglichen Reparatur"
+                    value={job.acceptance.repairNotPossibleReason}
+                  />
                 </div>
               )}
             </section>

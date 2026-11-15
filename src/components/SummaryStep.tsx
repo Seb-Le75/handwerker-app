@@ -61,6 +61,7 @@ export function SummaryStep({ draft, customer }: SummaryStepProps) {
           <Row label="Kundennummer" value={customer?.customerNumber} />
           <Row label="Kunde" value={customer ? formatCustomerName(customer.firstName, customer.lastName) : ""} />
           <Row label="Einsatzart" value={<Badge>{draft.type}</Badge>} />
+          <Row label="Termin" value={`${formatDate(draft.scheduledDate)}, ${draft.scheduledStartTime} Uhr`} />
           <Row label="Telefon" value={customer?.phone} />
           <Row label="E-Mail" value={customer?.email} />
           <Row label="Adresse" value={formatAddress(customer)} />
@@ -70,7 +71,10 @@ export function SummaryStep({ draft, customer }: SummaryStepProps) {
           <Row label="Anfahrtkosten" value={travelCategoryLabel(draft.travelCostCategory)} />
           <Row label="Kfz- und Ruestkosten" value={categoryLabel(draft.vehicleSetupCostCategory)} />
           {draft.type === "Notdienst" && (
-            <Row label="Notdienst-Zulage" value={draft.emergencySurchargePercent ? `${draft.emergencySurchargePercent} Prozent` : ""} />
+            <Row
+              label="Notdienst-Zulage"
+              value={draft.emergencySurchargePercent ? `${draft.emergencySurchargePercent} Prozent` : ""}
+            />
           )}
           <div className="md:col-span-2">
             <Row label="Auftragsdetails" value={draft.description} />
@@ -128,7 +132,9 @@ export function SummaryStep({ draft, customer }: SummaryStepProps) {
           <Row label="Unterschrift" value={draft.legal.signatureDataUrl ? "Vorhanden" : "Nicht erfasst"} />
           <Row
             label="Abnahme"
-            value={draft.acceptance.customerConfirmed === true ? "Vom Kunden bestaetigt" : "Noch nicht vom Kunden bestaetigt"}
+            value={
+              draft.acceptance.customerConfirmed === true ? "Vom Kunden bestaetigt" : "Noch nicht vom Kunden bestaetigt"
+            }
           />
           {draft.acceptance.repairNotPossible === true && (
             <Row label="Reparatur nicht moeglich" value={draft.acceptance.repairNotPossibleReason} />
@@ -137,5 +143,12 @@ export function SummaryStep({ draft, customer }: SummaryStepProps) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function formatDate(value: string) {
+  if (!value) return "Nicht angegeben";
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
+    new Date(`${value}T12:00:00`)
   );
 }

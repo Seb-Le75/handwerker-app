@@ -3,6 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The iPad preview reaches the local dev server through the Mac's LAN address.
+  allowedDevOrigins: [
+    "192.168.178.92",
+    "127.0.0.1",
+    "localhost",
+    ...(process.env.ALLOWED_DEV_ORIGINS?.split(",")
+      .map((value) => value.trim())
+      .filter(Boolean) ?? [])
+  ],
   async headers() {
     return [
       {

@@ -7,19 +7,34 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let storedValue: T | undefined;
     try {
       const stored = window.localStorage.getItem(key);
       if (stored) {
-        setValue(JSON.parse(stored) as T);
+        storedValue = JSON.parse(stored) as T;
       }
-    } finally {
-      setHydrated(true);
+    } catch {
+      // Keep the safe seed value if older or incomplete local data cannot be read.
     }
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      if (storedValue !== undefined) setValue(storedValue);
+      setHydrated(true);
+    });
+    return () => {
+      active = false;
+    };
   }, [key]);
 
   useEffect(() => {
     if (hydrated) {
-      window.localStorage.setItem(key, JSON.stringify(value));
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        // Safari private mode and large photo payloads may reject local writes.
+        // The current screen remains usable even when persistence is unavailable.
+      }
     }
   }, [hydrated, key, value]);
 

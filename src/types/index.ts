@@ -99,6 +99,8 @@ export type Job = {
   customerId: string;
   type: JobType;
   description: string;
+  scheduledDate?: string;
+  scheduledStartTime?: string;
   startTime: string;
   endTime: string;
   technicianCount?: number;
@@ -121,6 +123,8 @@ export type JobDraft = {
   customerId: string;
   type: JobType;
   description: string;
+  scheduledDate: string;
+  scheduledStartTime: string;
   notes: string;
   startTime: string;
   endTime: string;

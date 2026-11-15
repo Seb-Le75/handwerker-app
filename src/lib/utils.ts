@@ -6,7 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function createId(prefix: string) {
-  return `${prefix}-${crypto.randomUUID()}`;
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return `${prefix}-${uuid}`;
+
+  // randomUUID is unavailable in Safari when the local preview is opened over
+  // an unsecured LAN address. Keep the field workflow usable in that setup.
+  const fallback = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${fallback}`;
 }
 
 export function formatCustomerName(firstName: string, lastName: string) {
