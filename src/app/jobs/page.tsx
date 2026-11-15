@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { compareJobsByAppointment, formatAppointment } from "@/lib/jobs";
+import { compareJobsByAppointment, formatAppointment, jobProgressLabel } from "@/lib/jobs";
 import { formatCustomerName } from "@/lib/utils";
 import type { Customer, Job } from "@/types";
 
@@ -70,6 +70,7 @@ export default function JobsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge>{job.status}</Badge>
+                        <Badge className="bg-white">{jobProgressLabel(job)}</Badge>
                         <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       </div>
                     </div>

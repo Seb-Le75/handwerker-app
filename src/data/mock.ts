@@ -101,6 +101,8 @@ export const mockJobs: Job[] = [
       }
     ],
     status: "Abgeschlossen",
+    progress: "Büroprüfung",
+    assignedTechnician: "Mara Klein",
     notes: "Anlagendruck nachjustiert, Filter gereinigt.",
     legal: {
       privacyReceived: true,
@@ -146,6 +148,8 @@ export const mockJobs: Job[] = [
     ],
     tools: [],
     status: "Offen",
+    progress: "Geplant",
+    assignedTechnician: "Mara Klein",
     notes: "Ersatzventil vorbereitet, finaler Austausch mit Kundenzustimmung.",
     legal: {
       privacyReceived: true,

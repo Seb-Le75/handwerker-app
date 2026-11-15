@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { formatAppointment } from "@/lib/jobs";
+import { formatAppointment, jobProgressLabel } from "@/lib/jobs";
 import { formatCustomerName, formatDateTime, formatAddress } from "@/lib/utils";
 import type { CostCategory, Customer, Job } from "@/types";
 
@@ -136,6 +136,7 @@ export default function JobDetailPage() {
               <div className="flex flex-wrap gap-2">
                 <Badge>{job.type}</Badge>
                 <Badge>{job.status}</Badge>
+                <Badge className="bg-white">{jobProgressLabel(job)}</Badge>
               </div>
             </div>
           </CardHeader>
@@ -244,6 +245,7 @@ export default function JobDetailPage() {
               <DetailRow label="Einsatzart" value={job.type} />
               <DetailRow label="Arbeitszeit" value={`${job.startTime || "--:--"} bis ${job.endTime || "--:--"}`} />
               <DetailRow label="Monteure" value={job.technicianCount ? `${job.technicianCount}` : ""} />
+              <DetailRow label="Zugewiesen an" value={job.assignedTechnician} />
               <DetailRow label="Qualifikation" value={technicianRoleLabel(job.technicianRoles)} />
               <DetailRow label="Anfahrtkosten" value={travelCategoryLabel(job.travelCostCategory)} />
               <DetailRow label="Kfz- und Rüstkosten" value={categoryLabel(job.vehicleSetupCostCategory)} />

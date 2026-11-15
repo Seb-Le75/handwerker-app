@@ -12,7 +12,7 @@ export default async function NewJobPage({
       <JobWizard
         initialCustomerId={query.customerId}
         editJobId={query.jobId}
-        initialStep={query.step === "acceptance" ? 6 : undefined}
+        initialStep={query.step === "acceptance" ? 6 : query.step === "work" ? 3 : undefined}
       />
     </AppShell>
   );
