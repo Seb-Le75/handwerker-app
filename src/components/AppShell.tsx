@@ -13,8 +13,9 @@ import {
   UsersRound
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { StorageStatus } from "@/components/StorageStatus";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { cn } from "@/lib/utils";
 
 const fieldNavItems = [
   { href: "/", label: "Heute", icon: LayoutDashboard },
@@ -50,6 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div>
               <p className="text-xs font-semibold uppercase text-muted-foreground">SHK Einsatzsteuerung</p>
               <h1 className="text-xl font-semibold tracking-normal">Handwerker Service App</h1>
+              <StorageStatus />
             </div>
           </Link>
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary/70 p-1" aria-label="Arbeitsbereich wählen">

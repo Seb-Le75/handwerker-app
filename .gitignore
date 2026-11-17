@@ -6,6 +6,7 @@ dist
 playwright-report
 test-results
 coverage
+.data
 *.tsbuildinfo
 .env
 .env.local
