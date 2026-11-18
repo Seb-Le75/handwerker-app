@@ -1,5 +1,6 @@
 import type {
   Customer,
+  CompanySettings,
   EmergencySurcharge,
   Job,
   MaintenanceCheckItem,
@@ -301,4 +302,22 @@ export const mockPaymentSettings: PaymentSettings = {
   paypalEnabled: false,
   paypalMe: "",
   paypalDiscountPercent: 3
+};
+
+export const mockCompanySettings: CompanySettings = {
+  companyName: "Hansen Sanitär & Heizung GmbH",
+  ownerName: "Mara Klein",
+  street: "Werkstraße 12",
+  postalCode: "10115",
+  city: "Berlin",
+  phone: "+49 30 1234567",
+  email: "buero@hansen-shk.de",
+  taxNumber: "Bitte eintragen",
+  vatId: "Bitte eintragen",
+  iban: "Bitte eintragen",
+  bic: "Bitte eintragen",
+  bankName: "Bitte eintragen",
+  defaultVatRate: 19,
+  offerValidityDays: 14,
+  invoicePaymentDays: 14
 };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download, ImageIcon, Wrench } from "lucide-react";
+import { ArrowLeft, Download, FileText, ImageIcon, Receipt, Wrench } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +117,20 @@ export default function JobDetailPage() {
             <Button asChild variant="outline">
               <Link href={`/new?jobId=${encodeURIComponent(job.id)}`}>Auftragsdaten bearbeiten</Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link href={`/documents/new?jobId=${encodeURIComponent(job.id)}&type=Angebot`}>
+                <FileText className="h-4 w-4" />
+                Angebot erstellen
+              </Link>
+            </Button>
+            {job.status === "Abgeschlossen" ? (
+              <Button asChild variant="outline">
+                <Link href={`/documents/new?jobId=${encodeURIComponent(job.id)}&type=Rechnung`}>
+                  <Receipt className="h-4 w-4" />
+                  Rechnung erstellen
+                </Link>
+              </Button>
+            ) : null}
           </div>
           <Button variant="outline" size="lg" onClick={() => window.print()}>
             <Download className="h-5 w-5" />

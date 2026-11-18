@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  mockCompanySettings,
   mockEmergencySurcharges,
   mockMaintenanceChecks,
   mockMaterials,
@@ -21,6 +22,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { createId } from "@/lib/utils";
 import { materialUnits, normalizeMaterialUnit } from "@/lib/materials";
 import type {
+  CompanySettings,
   EmergencySurcharge,
   MaintenanceCheckItem,
   MaterialCatalogItem,
@@ -46,6 +48,10 @@ export default function SettingsPage() {
   const [paymentSettings, setPaymentSettings] = useLocalStorage<PaymentSettings>(
     "hsa-payment-settings",
     mockPaymentSettings
+  );
+  const [companySettings, setCompanySettings] = useLocalStorage<CompanySettings>(
+    "hsa-company-settings",
+    mockCompanySettings
   );
   const [focusMaterialId, setFocusMaterialId] = useState("");
   const [focusToolId, setFocusToolId] = useState("");
@@ -197,7 +203,8 @@ export default function SettingsPage() {
               <div className="rounded-lg bg-secondary/70 p-4">
                 <span className="block font-semibold">Speicherung</span>
                 <span className="mt-1 block text-muted-foreground">
-                  Kunden, Aufträge und Materialpreise liegen im localStorage dieses Geräts.
+                  Kunden, Aufträge und Dokumente werden gemeinsam auf dem Mac mini gespeichert und auf der NAS
+                  gesichert.
                 </span>
               </div>
             </CardContent>
@@ -208,7 +215,14 @@ export default function SettingsPage() {
               <CardDescription>Erfasste Pflichtbestandteile</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm">
-              {["Datenschutzerklärung", "Widerrufsbelehrung", "Auftragsbestätigung", "Abnahmeprotokoll"].map((item) => (
+              {[
+                "Angebot",
+                "Auftragsbestätigung",
+                "Rechnung",
+                "Datenschutzerklärung",
+                "Widerrufsbelehrung",
+                "Abnahmeprotokoll"
+              ].map((item) => (
                 <div key={item} className="rounded-lg border bg-white p-4 font-medium shadow-sm">
                   {item}
                 </div>
@@ -216,6 +230,109 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Firmendaten für Dokumente</CardTitle>
+            <CardDescription>
+              Diese Angaben erscheinen auf Angeboten, Auftragsbestätigungen und Rechnungen. Vor dem echten Einsatz bitte
+              Steuer- und Bankdaten prüfen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <CompanyField
+              id="company-name"
+              label="Firmenname"
+              value={companySettings.companyName}
+              onChange={(companyName) => setCompanySettings({ ...companySettings, companyName })}
+            />
+            <CompanyField
+              id="company-owner"
+              label="Inhaber / Geschäftsführung"
+              value={companySettings.ownerName}
+              onChange={(ownerName) => setCompanySettings({ ...companySettings, ownerName })}
+            />
+            <CompanyField
+              id="company-street"
+              label="Straße und Hausnummer"
+              value={companySettings.street}
+              onChange={(street) => setCompanySettings({ ...companySettings, street })}
+            />
+            <CompanyField
+              id="company-postal-code"
+              label="Postleitzahl"
+              value={companySettings.postalCode}
+              onChange={(postalCode) => setCompanySettings({ ...companySettings, postalCode })}
+            />
+            <CompanyField
+              id="company-city"
+              label="Ort"
+              value={companySettings.city}
+              onChange={(city) => setCompanySettings({ ...companySettings, city })}
+            />
+            <CompanyField
+              id="company-phone"
+              label="Telefon"
+              value={companySettings.phone}
+              onChange={(phone) => setCompanySettings({ ...companySettings, phone })}
+            />
+            <CompanyField
+              id="company-email"
+              label="E-Mail"
+              type="email"
+              value={companySettings.email}
+              onChange={(email) => setCompanySettings({ ...companySettings, email })}
+            />
+            <CompanyField
+              id="company-tax-number"
+              label="Steuernummer"
+              value={companySettings.taxNumber}
+              onChange={(taxNumber) => setCompanySettings({ ...companySettings, taxNumber })}
+            />
+            <CompanyField
+              id="company-vat-id"
+              label="USt-IdNr."
+              value={companySettings.vatId}
+              onChange={(vatId) => setCompanySettings({ ...companySettings, vatId })}
+            />
+            <CompanyField
+              id="company-bank"
+              label="Bank"
+              value={companySettings.bankName}
+              onChange={(bankName) => setCompanySettings({ ...companySettings, bankName })}
+            />
+            <CompanyField
+              id="company-iban"
+              label="IBAN"
+              value={companySettings.iban}
+              onChange={(iban) => setCompanySettings({ ...companySettings, iban })}
+            />
+            <CompanyField
+              id="company-bic"
+              label="BIC"
+              value={companySettings.bic}
+              onChange={(bic) => setCompanySettings({ ...companySettings, bic })}
+            />
+            <CompanyNumberField
+              label="Standard-Umsatzsteuer"
+              suffix="%"
+              value={companySettings.defaultVatRate}
+              onChange={(defaultVatRate) => setCompanySettings({ ...companySettings, defaultVatRate })}
+            />
+            <CompanyNumberField
+              label="Angebotsgültigkeit"
+              suffix="Tage"
+              value={companySettings.offerValidityDays}
+              onChange={(offerValidityDays) => setCompanySettings({ ...companySettings, offerValidityDays })}
+            />
+            <CompanyNumberField
+              label="Zahlungsziel Rechnung"
+              suffix="Tage"
+              value={companySettings.invoicePaymentDays}
+              onChange={(invoicePaymentDays) => setCompanySettings({ ...companySettings, invoicePaymentDays })}
+            />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -530,5 +647,48 @@ export default function SettingsPage() {
         </Card>
       </div>
     </AppShell>
+  );
+}
+
+function CompanyField({
+  id,
+  label,
+  value,
+  onChange,
+  type = "text"
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: "text" | "email";
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}
+
+function CompanyNumberField({
+  label,
+  suffix,
+  value,
+  onChange
+}: {
+  label: string;
+  suffix: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <span className="block text-sm font-medium">{label}</span>
+      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+        <DecimalInput ariaLabel={label} value={value} maximumFractionDigits={2} onChange={onChange} />
+        <span className="text-sm text-muted-foreground">{suffix}</span>
+      </div>
+    </div>
   );
 }

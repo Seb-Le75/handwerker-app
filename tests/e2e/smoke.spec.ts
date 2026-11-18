@@ -141,6 +141,8 @@ test("new job opens the complete legal and acceptance workflow", async ({ page }
 test("maintenance and PayPal defaults are configurable", async ({ page }) => {
   await page.goto("/settings");
 
+  await expect(page.getByRole("heading", { name: "Firmendaten für Dokumente" })).toBeVisible();
+  await page.getByLabel("Firmenname").fill("Hansen SHK Testbetrieb");
   await expect(page.getByRole("heading", { name: "Regelprüfungen / Wartungen" })).toBeVisible();
   const duration = page.getByLabel("Dauer für Sichtprüfung der Anlage");
   await duration.fill("25");
@@ -153,7 +155,43 @@ test("maintenance and PayPal defaults are configurable", async ({ page }) => {
   await page.getByLabel("PayPal-Sofortrabatt in Prozent").fill("4,5");
   await page.reload();
 
+  await expect(page.getByLabel("Firmenname")).toHaveValue("Hansen SHK Testbetrieb");
   await expect(page.getByLabel("Dauer für Sichtprüfung der Anlage")).toHaveValue("25");
   await expect(page.getByLabel("PayPal.Me-Name oder vollständiger Link")).toHaveValue("mein-shk-betrieb");
   await expect(page.getByLabel("PayPal-Sofortrabatt in Prozent")).toHaveValue("4,5");
+});
+
+test("the backoffice creates, downloads, and converts commercial documents", async ({ page }) => {
+  await page.goto("/documents");
+
+  await expect(page.getByRole("heading", { name: "Dokumente", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Dokumente" })).toBeVisible();
+  await page
+    .locator("div")
+    .filter({ hasText: "Jahreswartung Gastherme inklusive Sichtprüfung und Funktionskontrolle." })
+    .getByRole("link", { name: "Angebot" })
+    .first()
+    .click();
+
+  await expect(page.getByRole("heading", { name: "Angebot erstellen" })).toBeVisible();
+  await expect(page.getByLabel("Dokumentnummer")).toHaveValue(/ANG-\d{4}-0001/);
+  await page.getByRole("button", { name: "Dokument speichern" }).click();
+  await expect(page.getByRole("heading", { name: /Angebot ANG-\d{4}-0001/ })).toBeVisible();
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "PDF herunterladen" }).click();
+  await expect((await download).suggestedFilename()).toMatch(/^ANG-\d{4}-0001-angebot\.pdf$/);
+
+  await page.getByRole("button", { name: "Auftrag bestätigen" }).click();
+  await expect(page.getByRole("heading", { name: "Auftragsbestätigung erstellen" })).toBeVisible();
+  await expect(page.getByLabel("Dokumentnummer")).toHaveValue(/AB-\d{4}-0001/);
+  await page.getByRole("button", { name: "Dokument speichern" }).click();
+  await expect(page.getByRole("heading", { name: /Auftragsbestätigung AB-\d{4}-0001/ })).toBeVisible();
+
+  await page.getByRole("button", { name: "Rechnung erzeugen" }).click();
+  await expect(page.getByRole("heading", { name: "Rechnung erstellen" })).toBeVisible();
+  await expect(page.getByLabel("Dokumentnummer")).toHaveValue(/RE-\d{4}-0001/);
+  await page.getByRole("button", { name: "Dokument speichern" }).click();
+  await page.getByRole("button", { name: "Als bezahlt markieren" }).click();
+  await expect(page.getByText("Bezahlt", { exact: true })).toBeVisible();
 });

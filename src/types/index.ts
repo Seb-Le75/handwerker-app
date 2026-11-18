@@ -91,6 +91,55 @@ export type PaymentSettings = {
   paypalDiscountPercent: number;
 };
 
+export type CompanySettings = {
+  companyName: string;
+  ownerName: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  phone: string;
+  email: string;
+  taxNumber: string;
+  vatId: string;
+  iban: string;
+  bic: string;
+  bankName: string;
+  defaultVatRate: number;
+  offerValidityDays: number;
+  invoicePaymentDays: number;
+};
+
+export type BusinessDocumentType = "Angebot" | "Auftragsbestätigung" | "Rechnung";
+export type BusinessDocumentStatus = "Entwurf" | "Versendet" | "Angenommen" | "Bezahlt" | "Storniert";
+
+export type DocumentLineItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: MaterialUnit;
+  unitPrice: number;
+  vatRate: number;
+};
+
+export type BusinessDocument = {
+  id: string;
+  documentNumber: string;
+  type: BusinessDocumentType;
+  status: BusinessDocumentStatus;
+  jobId?: string;
+  customerId: string;
+  sourceDocumentId?: string;
+  issueDate: string;
+  validUntil?: string;
+  dueDate?: string;
+  subject: string;
+  introduction: string;
+  lineItems: DocumentLineItem[];
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type JobMaterialLine = {
   id: string;
   quantity: number;

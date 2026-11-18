@@ -7,6 +7,7 @@ import { isSharedDemoStorageEnabled, isSharedDemoStorageKey } from "@/lib/demo-s
 type RemoteRecord<T> = { value: T | null; updatedAt: string | null };
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
+  const initialValueRef = useRef(initialValue);
   const [value, setValueState] = useState<T>(initialValue);
   const [hydrated, setHydrated] = useState(false);
   const valueRef = useRef(value);
@@ -62,7 +63,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     let active = true;
 
     async function initialize() {
-      let localValue = initialValue;
+      let localValue = initialValueRef.current;
       try {
         const stored = window.localStorage.getItem(key);
         if (stored) localValue = JSON.parse(stored) as T;
@@ -99,7 +100,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     return () => {
       active = false;
     };
-  }, [initialValue, key, shared, storeLocally, storeRemotely]);
+  }, [key, shared, storeLocally, storeRemotely]);
 
   useEffect(() => {
     if (!shared || !hydrated) return;
