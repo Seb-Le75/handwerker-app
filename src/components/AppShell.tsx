@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BriefcaseBusiness,
   ClipboardList,
+  Files,
   HardHat,
   LayoutDashboard,
   Settings,
@@ -29,6 +30,7 @@ const officeNavItems = [
   { href: "/new", label: "Neuer Auftrag", icon: UserRoundPlus },
   { href: "/jobs", label: "Aufträge", icon: ClipboardList },
   { href: "/customers", label: "Kunden", icon: UsersRound },
+  { href: "/documents", label: "Dokumente", icon: Files },
   { href: "/admin", label: "Team", icon: ShieldCheck },
   { href: "/settings", label: "Einstellungen", icon: Settings }
 ];
@@ -36,7 +38,11 @@ const officeNavItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [workArea, setWorkArea] = useLocalStorage<"field" | "office">("hsa-work-area", "field");
-  const officeOnlyRoute = pathname === "/office" || pathname.startsWith("/admin") || pathname.startsWith("/settings");
+  const officeOnlyRoute =
+    pathname === "/office" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/documents");
   const isOffice = officeOnlyRoute || workArea === "office";
   const navItems = isOffice ? officeNavItems : fieldNavItems;
 
@@ -82,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav
           className={cn(
             "grid gap-2",
-            isOffice ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-6" : "grid-cols-2 lg:grid-cols-4"
+            isOffice ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-7" : "grid-cols-2 lg:grid-cols-4"
           )}
         >
           {navItems.map((item) => {

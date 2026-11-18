@@ -5,7 +5,9 @@ export const sharedDemoStorageKeys = [
   "hsa-tools",
   "hsa-emergency-surcharges",
   "hsa-maintenance-checks",
-  "hsa-payment-settings"
+  "hsa-payment-settings",
+  "hsa-company-settings",
+  "hsa-documents"
 ] as const;
 
 export type SharedDemoStorageKey = (typeof sharedDemoStorageKeys)[number];
