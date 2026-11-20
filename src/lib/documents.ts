@@ -2,6 +2,8 @@ import type {
   BusinessDocument,
   BusinessDocumentType,
   CompanySettings,
+  Customer,
+  CustomerSnapshot,
   DocumentLineItem,
   Job,
   MaterialUnit
@@ -46,6 +48,7 @@ export function createDocumentFromJob(
     status: "Entwurf",
     jobId: job.id,
     customerId: job.customerId,
+    customerSnapshot: job.customerSnapshot,
     sourceDocumentId: sourceDocument?.id,
     issueDate,
     validUntil: type === "Angebot" ? targetDate : undefined,
@@ -66,6 +69,56 @@ export function createDocumentFromJob(
           : "Vielen Dank für Ihren Auftrag.",
     createdAt: now.toISOString(),
     updatedAt: now.toISOString()
+  };
+}
+
+export function createOfferForCustomer(
+  customer: Customer,
+  documents: BusinessDocument[],
+  company: CompanySettings
+): BusinessDocument {
+  const now = new Date();
+  const issueDate = localDate(now);
+  const validUntil = addDays(issueDate, company.offerValidityDays);
+  return {
+    id: createId("document"),
+    documentNumber: nextDocumentNumber("Angebot", documents, issueDate),
+    type: "Angebot",
+    status: "Entwurf",
+    customerId: customer.id,
+    customerSnapshot: snapshotCustomer(customer),
+    issueDate,
+    validUntil,
+    subject: "Angebot für die angefragten Arbeiten",
+    introduction: "Vielen Dank für Ihre Anfrage. Gern bieten wir Ihnen die folgenden Leistungen an.",
+    lineItems: [
+      {
+        id: createId("doc-line"),
+        description: "Angefragte Leistung",
+        quantity: 1,
+        unit: "Pauschal",
+        unitPrice: 0,
+        vatRate: company.defaultVatRate
+      }
+    ],
+    notes: `Dieses Angebot ist bis zum ${formatDate(validUntil)} gültig.`,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  };
+}
+
+export function snapshotCustomer(customer: Customer): CustomerSnapshot {
+  return {
+    customerNumber: customer.customerNumber,
+    firstName: customer.firstName,
+    lastName: customer.lastName,
+    phone: customer.phone,
+    email: customer.email,
+    address: customer.address,
+    street: customer.street,
+    houseNumber: customer.houseNumber,
+    postalCode: customer.postalCode,
+    city: customer.city
   };
 }
 

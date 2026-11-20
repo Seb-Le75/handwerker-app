@@ -169,24 +169,18 @@ test("the backoffice creates, downloads, and converts commercial documents", asy
   await page
     .locator("div")
     .filter({ hasText: "Jahreswartung Gastherme inklusive Sichtprüfung und Funktionskontrolle." })
-    .getByRole("link", { name: "Angebot" })
+    .getByRole("link", { name: "Bestätigung" })
     .first()
     .click();
 
-  await expect(page.getByRole("heading", { name: "Angebot erstellen" })).toBeVisible();
-  await expect(page.getByLabel("Dokumentnummer")).toHaveValue(/ANG-\d{4}-0001/);
-  await page.getByRole("button", { name: "Dokument speichern" }).click();
-  await expect(page.getByRole("heading", { name: /Angebot ANG-\d{4}-0001/ })).toBeVisible();
-
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "PDF herunterladen" }).click();
-  await expect((await download).suggestedFilename()).toMatch(/^ANG-\d{4}-0001-angebot\.pdf$/);
-
-  await page.getByRole("button", { name: "Auftrag bestätigen" }).click();
   await expect(page.getByRole("heading", { name: "Auftragsbestätigung erstellen" })).toBeVisible();
   await expect(page.getByLabel("Dokumentnummer")).toHaveValue(/AB-\d{4}-0001/);
   await page.getByRole("button", { name: "Dokument speichern" }).click();
   await expect(page.getByRole("heading", { name: /Auftragsbestätigung AB-\d{4}-0001/ })).toBeVisible();
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "PDF herunterladen" }).click();
+  await expect((await download).suggestedFilename()).toMatch(/^AB-\d{4}-0001-auftragsbestaetigung\.pdf$/);
 
   await page.getByRole("button", { name: "Rechnung erzeugen" }).click();
   await expect(page.getByRole("heading", { name: "Rechnung erstellen" })).toBeVisible();
@@ -194,4 +188,43 @@ test("the backoffice creates, downloads, and converts commercial documents", asy
   await page.getByRole("button", { name: "Dokument speichern" }).click();
   await page.getByRole("button", { name: "Als bezahlt markieren" }).click();
   await expect(page.getByText("Bezahlt", { exact: true })).toBeVisible();
+});
+
+test("an accepted customer offer becomes a scheduled field job", async ({ page }) => {
+  await page.goto("/documents");
+
+  await page.getByLabel("Kunde").selectOption("cust-1001");
+  await page.getByRole("link", { name: "Angebot erstellen" }).click();
+  await expect(page.getByRole("heading", { name: "Angebot erstellen" })).toBeVisible();
+  await page.getByLabel("Betreff").fill("Installation einer neuen Heizungsanlage");
+  await page.getByLabel("Beschreibung").fill("Heizungsanlage liefern und montieren");
+  await page.getByLabel("Einzelpreis Position 1").fill("4500");
+  await page.getByRole("button", { name: "Dokument speichern" }).click();
+
+  await page.getByRole("button", { name: "Als versendet markieren" }).click();
+  await page.getByRole("button", { name: "Als angenommen markieren" }).click();
+  await expect(page.getByRole("heading", { name: "Angenommenes Angebot als Auftrag einplanen" })).toBeVisible();
+  const today = await page.evaluate(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
+  await page.getByLabel("Einsatzdatum").fill(today);
+  await page.getByLabel("Startzeit").fill("10:15");
+  await page.getByLabel("Mitarbeiter").selectOption("Mara Klein");
+  await page.getByRole("button", { name: "Auftrag erstellen und einplanen" }).click();
+
+  await expect(page.getByRole("heading", { name: /Auftragsprotokoll job-/ })).toBeVisible();
+  await expect(page.getByText(/Termin:.*10:15 Uhr/)).toBeVisible();
+  await expect(page.getByText("Heizungsanlage liefern und montieren")).toBeVisible();
+
+  await page.goto("/planning");
+  await expect(page.getByRole("heading", { name: "Wochenplanung" })).toBeVisible();
+  await expect(page.getByText("Marlene Schneider")).toBeVisible();
+  await page.getByText("Marlene Schneider").click();
+  await expect(page.getByRole("heading", { name: "Planung bearbeiten" })).toBeVisible();
+  await expect(page.getByLabel("Startzeit")).toHaveValue("10:15");
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Mein nächster Einsatz" })).toBeVisible();
+  await expect(page.getByText("Installation einer neuen Heizungsanlage")).toBeVisible();
 });

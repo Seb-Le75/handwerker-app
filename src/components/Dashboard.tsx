@@ -28,7 +28,9 @@ export function Dashboard() {
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [jobs, setJobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const today = localDateKey();
-  const openJobs = jobs.filter((job) => job.status === "Offen").sort(compareJobsByAppointment);
+  const openJobs = jobs
+    .filter((job) => job.status === "Offen" && (!job.assignedTechnician || job.assignedTechnician === "Mara Klein"))
+    .sort(compareJobsByAppointment);
   const todaysJobs = openJobs.filter((job) => scheduledDate(job, today) === today);
   const visibleJobs = todaysJobs.length > 0 ? todaysJobs : openJobs.slice(0, 4);
   const nextJob = visibleJobs[0];

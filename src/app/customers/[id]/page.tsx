@@ -341,6 +341,11 @@ export default function CustomerDetailPage() {
                   >
                     Neuer Auftrag
                   </Button>
+                  <Button asChild type="button" size="lg" variant="outline">
+                    <Link href={`/documents/new?customerId=${encodeURIComponent(customer.id)}&type=Angebot`}>
+                      Neues Angebot
+                    </Link>
+                  </Button>
                 </div>
               </form>
             ) : (

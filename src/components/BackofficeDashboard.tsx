@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -28,13 +29,14 @@ import {
   scheduledTime
 } from "@/lib/jobs";
 import { formatCustomerName } from "@/lib/utils";
-import type { Customer, Job } from "@/types";
+import type { BusinessDocument, Customer, Job } from "@/types";
 
 type OfficeFilter = "today" | "open" | "review" | "completed";
 
 export function BackofficeDashboard() {
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [jobs, setJobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
+  const [documents] = useLocalStorage<BusinessDocument[]>("hsa-documents", []);
   const [filter, setFilter] = useState<OfficeFilter>("today");
   const today = localDateKey();
   const openJobs = jobs.filter((job) => job.status === "Offen");
@@ -46,6 +48,12 @@ export function BackofficeDashboard() {
       isJobOverdue(job, today) ||
       job.acceptance.repairNotPossible === true ||
       (job.status === "Offen" && !job.assignedTechnician)
+  );
+  const acceptedOffers = documents.filter(
+    (document) =>
+      document.type === "Angebot" &&
+      document.status === "Angenommen" &&
+      !jobs.some((job) => job.id === document.jobId || job.sourceDocumentId === document.id)
   );
 
   const selectedJobs =
@@ -70,6 +78,12 @@ export function BackofficeDashboard() {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild variant="outline" size="lg">
+            <Link href="/planning">
+              <CalendarRange className="h-5 w-5" />
+              Wochenplanung
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
             <Link href="/customers">
               <UsersRound className="h-5 w-5" />
               Kunden
@@ -83,6 +97,26 @@ export function BackofficeDashboard() {
           </Button>
         </div>
       </section>
+
+      {acceptedOffers.length > 0 ? (
+        <Card className="border-blue-300 bg-blue-50/85">
+          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <strong>
+                {acceptedOffers.length}{" "}
+                {acceptedOffers.length === 1 ? "angenommenes Angebot wartet" : "angenommene Angebote warten"} auf die
+                Einplanung
+              </strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Auftrag, Termin und Mitarbeiter können direkt aus dem Angebot angelegt werden.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href={`/documents/${acceptedOffers[0].id}`}>Jetzt einplanen</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <section aria-label="Kennzahlen" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={CalendarDays} label="Heute eingeplant" value={todaysJobs.length} tone="primary" />

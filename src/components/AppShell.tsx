@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BriefcaseBusiness,
+  CalendarRange,
   ClipboardList,
   Files,
   HardHat,
@@ -28,6 +29,7 @@ const fieldNavItems = [
 const officeNavItems = [
   { href: "/office", label: "Büroübersicht", icon: BriefcaseBusiness },
   { href: "/new", label: "Neuer Auftrag", icon: UserRoundPlus },
+  { href: "/planning", label: "Planung", icon: CalendarRange },
   { href: "/jobs", label: "Aufträge", icon: ClipboardList },
   { href: "/customers", label: "Kunden", icon: UsersRound },
   { href: "/documents", label: "Dokumente", icon: Files },
@@ -42,6 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname === "/office" ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/settings") ||
+    pathname.startsWith("/planning") ||
     pathname.startsWith("/documents");
   const isOffice = officeOnlyRoute || workArea === "office";
   const navItems = isOffice ? officeNavItems : fieldNavItems;
@@ -88,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav
           className={cn(
             "grid gap-2",
-            isOffice ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-7" : "grid-cols-2 lg:grid-cols-4"
+            isOffice ? "grid-cols-2 sm:grid-cols-4 xl:grid-cols-8" : "grid-cols-2 lg:grid-cols-4"
           )}
         >
           {navItems.map((item) => {

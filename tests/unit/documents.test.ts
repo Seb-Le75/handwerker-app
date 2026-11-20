@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateDocumentTotals, createDocumentFromJob, nextDocumentNumber } from "@/lib/documents";
-import type { BusinessDocument, CompanySettings, Job } from "@/types";
+import {
+  calculateDocumentTotals,
+  createDocumentFromJob,
+  createOfferForCustomer,
+  nextDocumentNumber
+} from "@/lib/documents";
+import { createJobFromAcceptedOffer } from "@/lib/offer-workflow";
+import type { BusinessDocument, CompanySettings, Customer, Job } from "@/types";
 
 const company: CompanySettings = {
   companyName: "Hansen Sanitär & Heizung GmbH",
@@ -53,6 +59,19 @@ const job: Job = {
   createdAt: "2026-11-17T09:00:00.000Z"
 };
 
+const customer: Customer = {
+  id: "customer-test",
+  customerNumber: "K-4711",
+  firstName: "Marlene",
+  lastName: "Schneider",
+  phone: "069 123456",
+  email: "marlene@example.de",
+  street: "Goethestraße",
+  houseNumber: "18",
+  postalCode: "60313",
+  city: "Frankfurt am Main"
+};
+
 describe("business documents", () => {
   it("assigns a separate sequential number for each document type and year", () => {
     const documents = [
@@ -84,5 +103,37 @@ describe("business documents", () => {
     expect(invoice.sourceDocumentId).toBe(offer.id);
     expect(invoice.lineItems[0]).toMatchObject({ description: "Waschtischarmatur", unitPrice: 149.9 });
     expect(invoice.lineItems[0].id).not.toBe(offer.lineItems[0].id);
+  });
+
+  it("creates an offer before an order and freezes the customer data", () => {
+    const offer = createOfferForCustomer(customer, [], company);
+    customer.street = "Geänderte Straße";
+
+    expect(offer.jobId).toBeUndefined();
+    expect(offer.customerSnapshot).toMatchObject({ street: "Goethestraße", customerNumber: "K-4711" });
+    expect(offer.lineItems).toHaveLength(1);
+  });
+
+  it("turns an accepted offer into a scheduled job with copied positions", () => {
+    const offer = createOfferForCustomer(customer, [], company);
+    offer.status = "Angenommen";
+    offer.lineItems[0] = { ...offer.lineItems[0], description: "Neue Heizungsanlage", unitPrice: 4_500 };
+
+    const scheduledJob = createJobFromAcceptedOffer(offer, {
+      scheduledDate: "2026-11-23",
+      scheduledStartTime: "08:30",
+      assignedTechnician: "Mara Klein",
+      jobType: "Installation"
+    });
+
+    expect(scheduledJob).toMatchObject({
+      customerId: customer.id,
+      sourceDocumentId: offer.id,
+      scheduledDate: "2026-11-23",
+      scheduledStartTime: "08:30",
+      assignedTechnician: "Mara Klein",
+      status: "Offen"
+    });
+    expect(scheduledJob.materials?.[0]).toMatchObject({ materialName: "Neue Heizungsanlage", unitPrice: 4_500 });
   });
 });
