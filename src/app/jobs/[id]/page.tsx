@@ -57,6 +57,7 @@ export default function JobDetailPage() {
   const [jobs, , jobsHydrated] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const job = jobs.find((item) => item.id === params.id);
   const customer = job ? customers.find((item) => item.id === job.customerId) : undefined;
+  const displayCustomer = customer && job ? { ...customer, ...job.customerSnapshot, id: customer.id } : customer;
 
   if (!customersHydrated || !jobsHydrated) {
     return (
@@ -156,14 +157,18 @@ export default function JobDetailPage() {
           </CardHeader>
           <CardContent className="grid gap-5">
             <section className="grid gap-3 md:grid-cols-2">
-              <DetailRow label="Kundennummer" value={customer?.customerNumber} />
+              <DetailRow label="Kundennummer" value={displayCustomer?.customerNumber} />
               <DetailRow
                 label="Kunde"
-                value={customer ? formatCustomerName(customer.firstName, customer.lastName) : "Unbekannter Kunde"}
+                value={
+                  displayCustomer
+                    ? formatCustomerName(displayCustomer.firstName, displayCustomer.lastName)
+                    : "Unbekannter Kunde"
+                }
               />
-              <DetailRow label="Telefon" value={customer?.phone} />
-              <DetailRow label="E-Mail" value={customer?.email} />
-              <DetailRow label="Adresse" value={formatAddress(customer)} />
+              <DetailRow label="Telefon" value={displayCustomer?.phone} />
+              <DetailRow label="E-Mail" value={displayCustomer?.email} />
+              <DetailRow label="Adresse" value={formatAddress(displayCustomer)} />
             </section>
 
             {job.type === "Wartung" && (

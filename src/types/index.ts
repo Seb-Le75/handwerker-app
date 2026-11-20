@@ -18,7 +18,21 @@ export type Customer = {
   archivedAt?: string | null;
 };
 
-export type JobType = "Reparatur" | "Notdienst" | "Wartung" | "Angebot" | "Installation";
+export type CustomerSnapshot = Pick<
+  Customer,
+  | "customerNumber"
+  | "firstName"
+  | "lastName"
+  | "phone"
+  | "email"
+  | "address"
+  | "street"
+  | "houseNumber"
+  | "postalCode"
+  | "city"
+>;
+
+export type JobType = "Reparatur" | "Notdienst" | "Wartung" | "Installation";
 
 export type JobStatus = "Entwurf" | "Offen" | "Abgeschlossen" | "Abgebrochen";
 export type JobProgress = "Geplant" | "Unterwegs" | "In Arbeit" | "Büroprüfung";
@@ -128,6 +142,7 @@ export type BusinessDocument = {
   status: BusinessDocumentStatus;
   jobId?: string;
   customerId: string;
+  customerSnapshot?: CustomerSnapshot;
   sourceDocumentId?: string;
   issueDate: string;
   validUntil?: string;
@@ -161,6 +176,8 @@ export type JobToolLine = {
 export type Job = {
   id: string;
   customerId: string;
+  customerSnapshot?: CustomerSnapshot;
+  sourceDocumentId?: string;
   type: JobType;
   description: string;
   scheduledDate?: string;

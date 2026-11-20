@@ -172,7 +172,7 @@ export const mockJobs: Job[] = [
   }
 ];
 
-export const jobTypes = ["Reparatur", "Notdienst", "Wartung", "Angebot", "Installation"] as const;
+export const jobTypes = ["Reparatur", "Notdienst", "Wartung", "Installation"] as const;
 
 const materialSeed: MaterialCatalogItem[] = [
   { id: "mat-001", designation: "Siphon 1 1/4 Zoll", unit: "Stück", unitPrice: 18.9 },
@@ -321,3 +321,5 @@ export const mockCompanySettings: CompanySettings = {
   offerValidityDays: 14,
   invoicePaymentDays: 14
 };
+
+export const mockTechnicians = ["Mara Klein", "Lena Becker", "Jonas Weber"];

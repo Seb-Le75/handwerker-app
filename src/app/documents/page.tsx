@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, FilePlus2, ReceiptText } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default function DocumentsPage() {
   const [documents] = useLocalStorage<BusinessDocument[]>("hsa-documents", []);
   const [jobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
+  const [offerCustomerId, setOfferCustomerId] = useState("");
   const sortedDocuments = [...documents].sort((left, right) => right.issueDate.localeCompare(left.issueDate));
   const availableJobs = [...jobs].sort(compareJobsByAppointment).slice(0, 6);
 
@@ -31,6 +33,51 @@ export default function DocumentsPage() {
             Angebote, Auftragsbestätigungen und Rechnungen zentral verwalten.
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Neues Angebot für einen Kunden</CardTitle>
+            <CardDescription>
+              Das Angebot beginnt vor dem Auftrag. Nach der Annahme werden Termin und Mitarbeiter geplant.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="offer-customer">
+                Kunde
+              </label>
+              <select
+                id="offer-customer"
+                className="min-h-12 w-full rounded-md border border-input bg-background px-3 text-base"
+                value={offerCustomerId}
+                onChange={(event) => setOfferCustomerId(event.target.value)}
+              >
+                <option value="">Kunden auswählen</option>
+                {customers
+                  .filter((customer) => !customer.archived)
+                  .map((customer) => (
+                    <option value={customer.id} key={customer.id}>
+                      {customer.customerNumber ? `${customer.customerNumber} · ` : ""}
+                      {formatCustomerName(customer.firstName, customer.lastName)}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            {offerCustomerId ? (
+              <Button asChild size="lg">
+                <Link href={`/documents/new?customerId=${encodeURIComponent(offerCustomerId)}&type=Angebot`}>
+                  <FilePlus2 className="h-4 w-4" />
+                  Angebot erstellen
+                </Link>
+              </Button>
+            ) : (
+              <Button size="lg" disabled>
+                <FilePlus2 className="h-4 w-4" />
+                Angebot erstellen
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -57,10 +104,7 @@ export default function DocumentsPage() {
                     </h3>
                     <p className="mt-1 text-sm text-muted-foreground">{job.description}</p>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <Button asChild variant="outline">
-                      <Link href={`/documents/new?jobId=${job.id}&type=Angebot`}>Angebot</Link>
-                    </Button>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Button asChild variant="outline">
                       <Link href={`/documents/new?jobId=${job.id}&type=${encodeURIComponent("Auftragsbestätigung")}`}>
                         Bestätigung

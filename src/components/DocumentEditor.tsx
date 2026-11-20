@@ -12,17 +12,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { mockCompanySettings, mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { calculateDocumentTotals, createDocumentFromJob, documentUnits, formatCurrency } from "@/lib/documents";
+import {
+  calculateDocumentTotals,
+  createDocumentFromJob,
+  createOfferForCustomer,
+  documentUnits,
+  formatCurrency,
+  snapshotCustomer
+} from "@/lib/documents";
 import { createId, formatCustomerName } from "@/lib/utils";
 import type { BusinessDocument, BusinessDocumentType, CompanySettings, Customer, DocumentLineItem, Job } from "@/types";
 
 export function DocumentEditor({
   jobId,
+  customerId,
   type,
   documentId,
   sourceId
 }: {
   jobId?: string;
+  customerId?: string;
   type?: BusinessDocumentType;
   documentId?: string;
   sourceId?: string;
@@ -30,12 +39,12 @@ export function DocumentEditor({
   const router = useRouter();
   const [documents, setDocuments, documentsHydrated] = useLocalStorage<BusinessDocument[]>("hsa-documents", []);
   const [jobs, , jobsHydrated] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
-  const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
+  const [customers, , customersHydrated] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [company] = useLocalStorage<CompanySettings>("hsa-company-settings", mockCompanySettings);
   const [draft, setDraft] = useState<BusinessDocument | null>(null);
 
   useEffect(() => {
-    if (!documentsHydrated || !jobsHydrated || draft) return;
+    if (!documentsHydrated || !jobsHydrated || !customersHydrated || draft) return;
     const existing = documentId ? documents.find((item) => item.id === documentId) : undefined;
     if (existing) {
       queueMicrotask(() => setDraft(structuredClone(existing)));
@@ -43,16 +52,36 @@ export function DocumentEditor({
     }
     const source = sourceId ? documents.find((item) => item.id === sourceId) : undefined;
     const job = jobs.find((item) => item.id === (jobId ?? source?.jobId));
-    if (!job || !type) return;
-    queueMicrotask(() => setDraft(createDocumentFromJob(type, job, documents, company, source)));
-  }, [company, documentId, documents, documentsHydrated, draft, jobId, jobs, jobsHydrated, sourceId, type]);
+    if (job && type) {
+      queueMicrotask(() => setDraft(createDocumentFromJob(type, job, documents, company, source)));
+      return;
+    }
+    const customer = customers.find((item) => item.id === customerId);
+    if (customer && type === "Angebot") {
+      queueMicrotask(() => setDraft(createOfferForCustomer(customer, documents, company)));
+    }
+  }, [
+    company,
+    customerId,
+    customers,
+    customersHydrated,
+    documentId,
+    documents,
+    documentsHydrated,
+    draft,
+    jobId,
+    jobs,
+    jobsHydrated,
+    sourceId,
+    type
+  ]);
 
-  if (!documentsHydrated || !jobsHydrated || !draft) {
+  if (!documentsHydrated || !jobsHydrated || !customersHydrated || !draft) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Dokument wird vorbereitet</CardTitle>
-          <CardDescription>Auftrags- und Kundendaten werden übernommen.</CardDescription>
+          <CardDescription>Kunden- und Auftragsdaten werden übernommen.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -92,7 +121,11 @@ export function DocumentEditor({
 
   function save() {
     if (!draft) return;
-    const saved = { ...draft, updatedAt: new Date().toISOString() };
+    const saved = {
+      ...draft,
+      customerSnapshot: draft.customerSnapshot ?? (customer ? snapshotCustomer(customer) : undefined),
+      updatedAt: new Date().toISOString()
+    };
     setDocuments(
       documents.some((item) => item.id === saved.id)
         ? documents.map((item) => (item.id === saved.id ? saved : item))

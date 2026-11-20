@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, FilePenLine, Forward, Receipt } from "lucide-react";
+import { ArrowLeft, CalendarCheck2, CheckCircle2, FilePenLine, Forward, Receipt } from "lucide-react";
+import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { PdfDownloadButton } from "@/components/PdfDownloadButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockCompanySettings, mockCustomers } from "@/data/mock";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { mockCompanySettings, mockCustomers, mockJobs, mockTechnicians } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { calculateDocumentTotals, formatCurrency, formatDate } from "@/lib/documents";
+import { localDateKey } from "@/lib/jobs";
+import { createJobFromAcceptedOffer } from "@/lib/offer-workflow";
 import { formatAddress, formatCustomerName } from "@/lib/utils";
-import type { BusinessDocument, BusinessDocumentStatus, CompanySettings, Customer } from "@/types";
+import type { BusinessDocument, BusinessDocumentStatus, CompanySettings, Customer, Job, JobType } from "@/types";
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,6 +26,11 @@ export default function DocumentDetailPage() {
   const [documents, setDocuments, hydrated] = useLocalStorage<BusinessDocument[]>("hsa-documents", []);
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [company] = useLocalStorage<CompanySettings>("hsa-company-settings", mockCompanySettings);
+  const [jobs, setJobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
+  const [scheduledDate, setScheduledDate] = useState(localDateKey());
+  const [scheduledStartTime, setScheduledStartTime] = useState("08:00");
+  const [assignedTechnician, setAssignedTechnician] = useState(mockTechnicians[0]);
+  const [jobType, setJobType] = useState<JobType>("Installation");
   const document = documents.find((item) => item.id === params.id);
   const customer = document ? customers.find((item) => item.id === document.customerId) : undefined;
 
@@ -47,6 +57,10 @@ export default function DocumentDetailPage() {
     );
 
   const currentDocument = document;
+  const documentCustomer: Customer = { ...customer, ...document.customerSnapshot, id: customer.id };
+  const linkedJob = document.jobId
+    ? jobs.find((job) => job.id === document.jobId)
+    : jobs.find((job) => job.sourceDocumentId === document.id);
   const totals = calculateDocumentTotals(document.lineItems);
 
   function updateStatus(status: BusinessDocumentStatus) {
@@ -59,6 +73,22 @@ export default function DocumentDetailPage() {
 
   function convert(type: "Auftragsbestätigung" | "Rechnung") {
     router.push(`/documents/new?sourceId=${currentDocument.id}&type=${encodeURIComponent(type)}`);
+  }
+
+  function createOrder() {
+    const job = createJobFromAcceptedOffer(currentDocument, {
+      scheduledDate,
+      scheduledStartTime,
+      assignedTechnician,
+      jobType
+    });
+    setJobs([job, ...jobs]);
+    setDocuments(
+      documents.map((item) =>
+        item.id === currentDocument.id ? { ...item, jobId: job.id, updatedAt: new Date().toISOString() } : item
+      )
+    );
+    router.push(`/jobs/${job.id}`);
   }
 
   return (
@@ -78,20 +108,20 @@ export default function DocumentDetailPage() {
                 Bearbeiten
               </Link>
             </Button>
-            {document.type === "Angebot" ? (
+            {document.type === "Angebot" && linkedJob ? (
               <Button type="button" variant="outline" onClick={() => convert("Auftragsbestätigung")}>
                 <Forward className="h-4 w-4" />
-                Auftrag bestätigen
+                Auftragsbestätigung erzeugen
               </Button>
             ) : null}
-            {document.type !== "Rechnung" ? (
+            {document.type !== "Rechnung" && linkedJob?.status === "Abgeschlossen" ? (
               <Button type="button" variant="outline" onClick={() => convert("Rechnung")}>
                 <Receipt className="h-4 w-4" />
                 Rechnung erzeugen
               </Button>
             ) : null}
           </div>
-          <PdfDownloadButton document={document} customer={customer} company={company} />
+          <PdfDownloadButton document={document} customer={documentCustomer} company={company} />
         </div>
 
         <Card>
@@ -115,8 +145,10 @@ export default function DocumentDetailPage() {
             <section className="grid gap-3 md:grid-cols-2">
               <div className="rounded-lg bg-secondary/60 p-4">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">Kunde</span>
-                <strong className="mt-1 block">{formatCustomerName(customer.firstName, customer.lastName)}</strong>
-                <span className="mt-1 block text-sm">{formatAddress(customer)}</span>
+                <strong className="mt-1 block">
+                  {formatCustomerName(documentCustomer.firstName, documentCustomer.lastName)}
+                </strong>
+                <span className="mt-1 block text-sm">{formatAddress(documentCustomer)}</span>
               </div>
               <div className="rounded-lg bg-secondary/60 p-4">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">Betreff</span>
@@ -158,6 +190,91 @@ export default function DocumentDetailPage() {
             <p className="rounded-lg border bg-white p-4">{document.notes}</p>
           </CardContent>
         </Card>
+
+        {document.type === "Angebot" && document.status === "Angenommen" && !linkedJob ? (
+          <Card className="border-primary/35">
+            <CardHeader>
+              <CardTitle>Angenommenes Angebot als Auftrag einplanen</CardTitle>
+              <CardDescription>
+                Positionen, Preise und die Kundenadresse werden als unveränderter Stand in den Auftrag übernommen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
+                <Label htmlFor="order-job-type">Auftragsart</Label>
+                <select
+                  id="order-job-type"
+                  className="min-h-12 w-full rounded-md border border-input bg-background px-3"
+                  value={jobType}
+                  onChange={(event) => setJobType(event.target.value as JobType)}
+                >
+                  <option value="Installation">Installation</option>
+                  <option value="Reparatur">Reparatur</option>
+                  <option value="Wartung">Wartung</option>
+                  <option value="Notdienst">Notdienst</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order-date">Einsatzdatum</Label>
+                <Input
+                  id="order-date"
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(event) => setScheduledDate(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order-time">Startzeit</Label>
+                <Input
+                  id="order-time"
+                  type="time"
+                  value={scheduledStartTime}
+                  onChange={(event) => setScheduledStartTime(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order-technician">Mitarbeiter</Label>
+                <select
+                  id="order-technician"
+                  className="min-h-12 w-full rounded-md border border-input bg-background px-3"
+                  value={assignedTechnician}
+                  onChange={(event) => setAssignedTechnician(event.target.value)}
+                >
+                  {mockTechnicians.map((technician) => (
+                    <option value={technician} key={technician}>
+                      {technician}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                type="button"
+                size="lg"
+                className="md:col-span-2 xl:col-span-4 xl:justify-self-end"
+                onClick={createOrder}
+              >
+                <CalendarCheck2 className="h-5 w-5" />
+                Auftrag erstellen und einplanen
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {linkedJob ? (
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <strong>Verknüpfter Auftrag</strong>
+                <p className="text-sm text-muted-foreground">
+                  {linkedJob.scheduledDate} · {linkedJob.scheduledStartTime} Uhr · {linkedJob.assignedTechnician}
+                </p>
+              </div>
+              <Button asChild variant="outline">
+                <Link href={`/jobs/${linkedJob.id}`}>Auftrag öffnen</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <div className="flex flex-wrap justify-end gap-3">
           {document.status === "Entwurf" ? (
