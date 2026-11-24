@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, FilePlus2, ReceiptText } from "lucide-react";
+import { ChevronRight, FilePlus2, ReceiptText, Search } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { calculateDocumentTotals, formatCurrency, formatDate } from "@/lib/documents";
@@ -20,7 +21,27 @@ export default function DocumentsPage() {
   const [jobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [offerCustomerId, setOfferCustomerId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const sortedDocuments = [...documents].sort((left, right) => right.issueDate.localeCompare(left.issueDate));
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase("de-DE");
+  const filteredDocuments = sortedDocuments.filter((document) => {
+    if (!normalizedQuery) return true;
+    const customer = customers.find((item) => item.id === document.customerId) ?? document.customerSnapshot;
+    const searchableText = [
+      document.documentNumber,
+      document.type,
+      document.status,
+      document.subject,
+      customer?.customerNumber,
+      customer?.firstName,
+      customer?.lastName,
+      customer?.city
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("de-DE");
+    return searchableText.includes(normalizedQuery);
+  });
   const availableJobs = [...jobs].sort(compareJobsByAppointment).slice(0, 6);
 
   return (
@@ -127,14 +148,32 @@ export default function DocumentsPage() {
         </Card>
 
         <section className="grid gap-4" aria-labelledby="document-list-heading">
-          <div className="flex items-center justify-between gap-3">
-            <h2 id="document-list-heading" className="text-2xl font-semibold">
-              Erstellte Dokumente
-            </h2>
-            <span className="text-sm text-muted-foreground">{documents.length} Dokumente</span>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <h2 id="document-list-heading" className="text-2xl font-semibold">
+                Erstellte Dokumente
+              </h2>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                {filteredDocuments.length} von {documents.length} Dokumenten
+              </span>
+            </div>
+            <div className="relative w-full sm:w-96">
+              <Search
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                aria-label="Dokumente durchsuchen"
+                placeholder="Kunde, Kundennummer oder Dokument suchen"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="pl-12"
+              />
+            </div>
           </div>
-          {sortedDocuments.length > 0 ? (
-            sortedDocuments.map((document) => {
+          {filteredDocuments.length > 0 ? (
+            filteredDocuments.map((document) => {
               const customer = customers.find((item) => item.id === document.customerId);
               const totals = calculateDocumentTotals(document.lineItems);
               return (
@@ -167,7 +206,7 @@ export default function DocumentsPage() {
                 </Link>
               );
             })
-          ) : (
+          ) : documents.length === 0 ? (
             <Card>
               <CardContent className="grid justify-items-center gap-3 py-12 text-center">
                 <ReceiptText className="h-10 w-10 text-muted-foreground" />
@@ -176,6 +215,13 @@ export default function DocumentsPage() {
                   <FilePlus2 className="h-4 w-4" />
                   Oben einen Auftrag auswählen
                 </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="grid justify-items-center gap-3 py-12 text-center">
+                <Search className="h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">Kein Dokument für „{searchQuery.trim()}“ gefunden.</p>
               </CardContent>
             </Card>
           )}
