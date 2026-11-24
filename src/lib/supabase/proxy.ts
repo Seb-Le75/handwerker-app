@@ -10,12 +10,8 @@ export async function updateAuthSession(request: NextRequest) {
   const isProtected = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
 
   if (!config) {
-    if (isProtected && process.env.NODE_ENV === "production") {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.searchParams.set("configuration", "missing");
-      return NextResponse.redirect(loginUrl);
-    }
+    // Without a Supabase connection the admin area contains preview data only.
+    // Keep that read-only preview available in the locally hosted production build.
     return NextResponse.next({ request });
   }
 

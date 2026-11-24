@@ -19,7 +19,8 @@ export default function ArbeitsbeginnPage() {
             Leistung vor Ablauf einer möglichen Widerrufsfrist starten darf.
           </p>
           <p>
-            Die Zustimmung wird im Auftrag dokumentiert und zusammen mit den weiteren Einsatzdaten lokal gespeichert.
+            Die Zustimmung wird im Auftrag dokumentiert und zusammen mit den weiteren Einsatzdaten auf dem
+            betriebseigenen Server gespeichert.
           </p>
         </CardContent>
       </Card>

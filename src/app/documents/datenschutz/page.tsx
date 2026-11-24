@@ -16,8 +16,9 @@ export default function DatenschutzPage() {
             Arbeitszeiten, Fotos der betroffenen Anlage sowie Abnahmeinformationen.
           </p>
           <p>
-            Die Daten werden im MVP lokal auf diesem Gerät gespeichert. Eine Weitergabe erfolgt nur, wenn sie für die
-            Auftragserfüllung, gesetzliche Pflichten oder berechtigte Nachweise erforderlich ist.
+            Die Daten werden in der lokalen Testversion zentral auf dem betriebseigenen Mac mini gespeichert und auf der
+            NAS gesichert. Eine Weitergabe erfolgt nur, wenn sie für die Auftragserfüllung, gesetzliche Pflichten oder
+            berechtigte Nachweise erforderlich ist.
           </p>
           <p>
             Kunden können Auskunft, Berichtigung, Einschränkung oder Löschung ihrer Daten verlangen, soweit keine

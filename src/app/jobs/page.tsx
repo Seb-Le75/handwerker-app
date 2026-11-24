@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { mockCustomers, mockJobs } from "@/data/mock";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { compareJobsByAppointment, formatAppointment, jobProgressLabel } from "@/lib/jobs";
@@ -16,10 +18,31 @@ import type { Customer, Job } from "@/types";
 export default function JobsPage() {
   const [customers] = useLocalStorage<Customer[]>("hsa-customers", mockCustomers);
   const [jobs] = useLocalStorage<Job[]>("hsa-jobs", mockJobs);
+  const [searchQuery, setSearchQuery] = useState("");
   const sortedJobs = [...jobs].sort((left, right) => {
     if (left.status === "Offen" && right.status !== "Offen") return -1;
     if (left.status !== "Offen" && right.status === "Offen") return 1;
     return compareJobsByAppointment(left, right);
+  });
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase("de-DE");
+  const filteredJobs = sortedJobs.filter((job) => {
+    if (!normalizedQuery) return true;
+    const customer = customers.find((item) => item.id === job.customerId) ?? job.customerSnapshot;
+    const searchableText = [
+      job.id,
+      job.type,
+      job.status,
+      job.description,
+      job.notes,
+      customer?.customerNumber,
+      customer?.firstName,
+      customer?.lastName,
+      customer?.city
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("de-DE");
+    return searchableText.includes(normalizedQuery);
   });
 
   return (
@@ -40,8 +63,23 @@ export default function JobsPage() {
           </Button>
         </div>
 
+        <div className="relative max-w-2xl">
+          <Search
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            aria-label="Aufträge durchsuchen"
+            placeholder="Kunde, Kundennummer oder Auftrag suchen"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="pl-12"
+          />
+        </div>
+
         <div className="grid gap-4">
-          {sortedJobs.map((job) => {
+          {filteredJobs.map((job) => {
             const customer = customers.find((item) => item.id === job.customerId);
             const materialLines = (job.materials ?? []).filter((line) => line.materialName);
             const materialSum = materialLines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
@@ -104,6 +142,13 @@ export default function JobsPage() {
               </Link>
             );
           })}
+          {filteredJobs.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center text-muted-foreground">
+                Kein Auftrag für „{searchQuery.trim()}“ gefunden.
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
     </AppShell>

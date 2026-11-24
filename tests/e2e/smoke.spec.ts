@@ -142,6 +142,10 @@ test("maintenance and PayPal defaults are configurable", async ({ page }) => {
   await page.goto("/settings");
 
   await expect(page.getByRole("heading", { name: "Firmendaten für Dokumente" })).toBeVisible();
+  await page.getByRole("link", { name: "Datenschutzerklärung" }).click();
+  await expect(page.getByRole("heading", { name: "Datenschutzerklärung" })).toBeVisible();
+  await page.goto("/settings");
+  await expect(page.getByRole("link", { name: "Zustimmung zum Arbeitsbeginn" })).toBeVisible();
   await page.getByLabel("Firmenname").fill("Hansen SHK Testbetrieb");
   await expect(page.getByRole("heading", { name: "Regelprüfungen / Wartungen" })).toBeVisible();
   const duration = page.getByLabel("Dauer für Sichtprüfung der Anlage");
@@ -159,6 +163,55 @@ test("maintenance and PayPal defaults are configurable", async ({ page }) => {
   await expect(page.getByLabel("Dauer für Sichtprüfung der Anlage")).toHaveValue("25");
   await expect(page.getByLabel("PayPal.Me-Name oder vollständiger Link")).toHaveValue("mein-shk-betrieb");
   await expect(page.getByLabel("PayPal-Sofortrabatt in Prozent")).toHaveValue("4,5");
+});
+
+test("jobs and documents can be searched by customer", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "hsa-documents",
+      JSON.stringify([
+        {
+          id: "doc-search-1",
+          documentNumber: "ANG-2026-0042",
+          type: "Angebot",
+          status: "Entwurf",
+          customerId: "cust-1001",
+          issueDate: "2026-11-20",
+          subject: "Neue Heizungsanlage",
+          introduction: "",
+          lineItems: [],
+          notes: "",
+          createdAt: "2026-11-20T10:00:00.000Z",
+          updatedAt: "2026-11-20T10:00:00.000Z"
+        },
+        {
+          id: "doc-search-2",
+          documentNumber: "RE-2026-0043",
+          type: "Rechnung",
+          status: "Entwurf",
+          customerId: "cust-1002",
+          issueDate: "2026-11-21",
+          subject: "Notdiensteinsatz",
+          introduction: "",
+          lineItems: [],
+          notes: "",
+          createdAt: "2026-11-21T10:00:00.000Z",
+          updatedAt: "2026-11-21T10:00:00.000Z"
+        }
+      ])
+    );
+  });
+
+  await page.goto("/jobs");
+  await page.getByRole("searchbox", { name: "Aufträge durchsuchen" }).fill("Marlene Schneider");
+  await expect(page.getByText("Marlene Schneider")).toBeVisible();
+  await expect(page.getByText("Tobias Keller")).not.toBeVisible();
+
+  await page.goto("/documents");
+  await page.getByRole("searchbox", { name: "Dokumente durchsuchen" }).fill("Marlene");
+  await expect(page.getByText(/ANG-2026-0042.*Marlene Schneider/)).toBeVisible();
+  await expect(page.getByText(/RE-2026-0043.*Tobias Keller/)).not.toBeVisible();
+  await expect(page.getByText("1 von 2 Dokumenten")).toBeVisible();
 });
 
 test("the backoffice creates, downloads, and converts commercial documents", async ({ page }) => {

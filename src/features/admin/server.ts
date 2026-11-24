@@ -18,8 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function loadAdminOverview(): Promise<AdminOverview> {
   const supabaseConfig = readSupabasePublicConfig();
 
-  if (!supabaseConfig && process.env.NODE_ENV !== "production") return previewAdminOverview;
-  if (!supabaseConfig) redirect("/login?configuration=missing");
+  if (!supabaseConfig) return previewAdminOverview;
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();

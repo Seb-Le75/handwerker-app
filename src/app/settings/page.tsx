@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { ChevronRight, Plus, X } from "lucide-react";
+import Link from "next/link";
 
 import { AppShell } from "@/components/AppShell";
 import { DecimalInput } from "@/components/DecimalInput";
@@ -216,16 +217,22 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="grid gap-3 text-sm">
               {[
-                "Angebot",
-                "Auftragsbestätigung",
-                "Rechnung",
-                "Datenschutzerklärung",
-                "Widerrufsbelehrung",
-                "Abnahmeprotokoll"
+                { label: "Angebot", href: "/documents" },
+                { label: "Auftragsbestätigung", href: "/documents" },
+                { label: "Rechnung", href: "/documents" },
+                { label: "Datenschutzerklärung", href: "/documents/datenschutz" },
+                { label: "Widerrufsbelehrung", href: "/documents/widerruf" },
+                { label: "Zustimmung zum Arbeitsbeginn", href: "/documents/arbeitsbeginn" },
+                { label: "Abnahmeprotokoll (im Auftrag)", href: "/jobs" }
               ].map((item) => (
-                <div key={item} className="rounded-lg border bg-white p-4 font-medium shadow-sm">
-                  {item}
-                </div>
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="flex min-h-12 items-center justify-between gap-3 rounded-lg border bg-white p-4 font-medium shadow-sm transition-colors hover:border-primary/45 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span>{item.label}</span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                </Link>
               ))}
             </CardContent>
           </Card>
